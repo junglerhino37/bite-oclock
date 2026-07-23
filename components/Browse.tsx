@@ -88,7 +88,7 @@ export default function Browse({
 
   return (
     <div className="space-y-5">
-      <AskBar onFilter={changeFilter} />
+      <AskBar onFilter={changeFilter} spots={spots} />
       <FilterBar filter={filter} onChange={changeFilter} neighborhoods={neighborhoods} today={today} />
       {geoNote && <p className="text-xs text-muted">{geoNote}</p>}
 

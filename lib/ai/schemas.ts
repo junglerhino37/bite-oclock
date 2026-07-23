@@ -80,3 +80,22 @@ export const QueryFilterSchema = z.object({
   answer_style_hint: z.string().max(200).nullable().catch(null),
 });
 export type QueryFilter = z.infer<typeof QueryFilterSchema>;
+
+/** "Add a deal" intent extracted from an Ask-bar sentence like
+ * "add $1 oysters at julep". Data only — publishing still goes through the
+ * normal /api/submit validation after the user confirms in the UI. */
+export const AskAddSchema = z.object({
+  restaurant_name: z.string().min(1).max(120),
+  item: z.string().min(1).max(120),
+  price: z.string().max(24).nullable(),
+  category: categoryEnum,
+  description: z.string().max(240).nullable().catch(null),
+});
+export type AskAdd = z.infer<typeof AskAddSchema>;
+
+export const AskResponseSchema = z.object({
+  intent: z.enum(["search", "add"]).catch("search"),
+  filter: QueryFilterSchema.nullable(),
+  add: AskAddSchema.nullable(),
+});
+export type AskResponse = z.infer<typeof AskResponseSchema>;

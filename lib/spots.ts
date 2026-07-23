@@ -153,7 +153,9 @@ export function applyFilter(
       if (!filter.categories.some((c) => cats.has(c))) return false;
     }
     if (filter.neighborhood && spot.neighborhood !== filter.neighborhood) return false;
-    if (filter.day && !spot.days.includes(filter.day)) return false;
+    // Spots with no listed days are "days unknown", not "never" — day filters
+    // keep them visible so a fresh community listing doesn't vanish.
+    if (filter.day && spot.days.length > 0 && !spot.days.includes(filter.day)) return false;
     if (filter.liveNow && !isLiveNow(spot, now)) return false;
     if (filter.foodTerms.length > 0) {
       const haystack = [spot.name, ...spot.deals.map((d) => d.item)].join(" ").toLowerCase();
