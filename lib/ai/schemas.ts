@@ -1,0 +1,46 @@
+import { z } from "zod";
+import { CATEGORY_KEYS } from "@/lib/categories";
+import { DAYS } from "@/lib/types";
+
+const categoryEnum = z.enum(CATEGORY_KEYS as [string, ...string[]]);
+const dayEnum = z.enum(DAYS as [string, ...string[]]);
+const hhmm = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+  .nullable();
+
+/** What the vision model must return for a menu photo.
+ * SECURITY: this is untrusted output derived from an untrusted image. It is
+ * schema-validated here, stored as *pending* data for human moderation, and
+ * never interpreted as instructions or auto-published. */
+export const ExtractionSchema = z.object({
+  is_menu: z.boolean(),
+  restaurant_candidates: z.array(z.string().max(120)).max(5),
+  happy_hour_days: z.array(dayEnum).max(7),
+  start: hhmm,
+  end: hhmm,
+  deals: z
+    .array(
+      z.object({
+        item: z.string().max(120),
+        price: z.string().max(24).nullable(),
+        category: categoryEnum,
+      }),
+    )
+    .max(40),
+  confidence: z.number().min(0).max(1),
+});
+export type Extraction = z.infer<typeof ExtractionSchema>;
+
+/** The ONLY thing the NL-query model may produce: a constrained filter object.
+ * The model never writes SQL and never touches data directly — injection in a
+ * user question can only yield a weird filter, not an exploit. */
+export const QueryFilterSchema = z.object({
+  food_terms: z.array(z.string().max(40)).max(6),
+  categories: z.array(categoryEnum).max(8),
+  neighborhood: z.string().max(60).nullable(),
+  day: dayEnum.nullable(),
+  live_now: z.boolean(),
+  answer_style_hint: z.string().max(200).nullable(),
+});
+export type QueryFilter = z.infer<typeof QueryFilterSchema>;

@@ -1,0 +1,398 @@
+[
+  {
+    "name": "Azumi",
+    "address": "4444 Westheimer Rd, Houston, TX 77027",
+    "lat": 29.7434,
+    "lng": -95.453,
+    "neighborhood": "River Oaks",
+    "days": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+    "start": "15:00",
+    "end": "18:00",
+    "deals": [
+      { "item": "Snacks", "price": "$2", "category": "barfood" },
+      { "item": "Nigiri", "price": "$4", "category": "sushi" },
+      { "item": "Rolls and crudos", "price": "$14", "category": "sushi" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "River Oaks District (same complex as Loch Bar). Bar seating is in high demand; also $5 martinis."
+  },
+  {
+    "name": "Winsome Prime",
+    "address": "5888 Westheimer Rd, Houston, TX 77057",
+    "lat": 29.7386,
+    "lng": -95.484,
+    "neighborhood": "Galleria",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "16:00",
+    "end": "19:00",
+    "deals": [
+      { "item": "Appetizers (incl. chile-glazed shrimp)", "price": "$8-11", "category": "seafood" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Steakhouse happy hour; also $7 cocktails and $7 wine/champagne by the glass."
+  },
+  {
+    "name": "Oishii Japanese Restaurant & Sushi Bar",
+    "address": "3764 Richmond Ave, Houston, TX 77046",
+    "lat": 29.7331,
+    "lng": -95.4369,
+    "neighborhood": "Upper Kirby",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "19:00",
+    "deals": [
+      { "item": "Appetizers, buy one get one free", "price": "$5.96", "category": "sushi" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Also Sat 15:00-18:00. Longtime budget sushi happy hour; $3.25 domestic beer, $4.25 hot sake."
+  },
+  {
+    "name": "Bar Boheme",
+    "address": "307 Fairview St, Houston, TX 77006",
+    "lat": 29.748,
+    "lng": -95.3861,
+    "neighborhood": "Montrose",
+    "days": ["tue", "wed", "thu", "fri"],
+    "start": "11:00",
+    "end": "18:00",
+    "deals": [{ "item": "Select food items", "price": "$7", "category": "barfood" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "$7 food / $7 drinks format during a long afternoon window."
+  },
+  {
+    "name": "Loro",
+    "address": "1001 W 11th St, Houston, TX 77008",
+    "lat": 29.7908,
+    "lng": -95.4074,
+    "neighborhood": "Heights",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "14:00",
+    "end": "18:00",
+    "deals": [{ "item": "Bar bites", "price": "$5-8", "category": "barfood" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Asian-smokehouse hybrid (Uchi x Franklin BBQ); also $5 boozy slushies and $5 select beer/wine."
+  },
+  {
+    "name": "Loch Bar",
+    "address": "4444 Westheimer Rd, Houston, TX 77027",
+    "lat": 29.7436,
+    "lng": -95.4526,
+    "neighborhood": "River Oaks",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "19:00",
+    "deals": [
+      { "item": "Burger and snacks", "price": "$10", "category": "burgers" },
+      { "item": "Oyster shooters", "price": "$2", "category": "seafood" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Also a late-night happy hour Sun-Mon 22:00-01:00; $9 frozen cocktails."
+  },
+  {
+    "name": "Clark's Oyster Bar",
+    "address": "3807 Montrose Blvd, Houston, TX 77006",
+    "lat": 29.7386,
+    "lng": -95.3911,
+    "neighborhood": "Montrose",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "17:00",
+    "deals": [
+      { "item": "Burgers, half price", "price": "50% off", "category": "burgers" },
+      { "item": "Oysters, 50 cents off each", "price": "-$0.50/ea", "category": "seafood" },
+      { "item": "Oyster shooter", "price": "$5", "category": "seafood" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Half-priced martinis too; oyster discount applies at every table."
+  },
+  {
+    "name": "Under the Volcano",
+    "address": "2349 Bissonnet St, Houston, TX 77005",
+    "lat": 29.7252,
+    "lng": -95.4148,
+    "neighborhood": "Rice Village",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "14:00",
+    "end": "19:00",
+    "deals": [{ "item": "Appetizers", "price": "$5-8", "category": "barfood" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Neighborhood dive; $1 off cocktails and draft beers, $7.25 frozen screwdrivers."
+  },
+  {
+    "name": "Xochi",
+    "address": "1777 Walker St Ste A, Houston, TX 77010",
+    "lat": 29.7544,
+    "lng": -95.3576,
+    "neighborhood": "Downtown",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "16:00",
+    "end": "18:00",
+    "deals": [{ "item": "Bar bites (Oaxacan)", "price": "$9-12", "category": "texmex" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Hugo Ortega's Oaxacan restaurant at the Marriott Marquis. Also Sat 15:00-18:00; $8 cocktails, $9 sangria."
+  },
+  {
+    "name": "Bludorn",
+    "address": "807 Taft St, Houston, TX 77019",
+    "lat": 29.7589,
+    "lng": -95.3857,
+    "neighborhood": "Montrose",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "16:00",
+    "end": "18:00",
+    "deals": [
+      { "item": "Oysters", "price": "$3", "category": "seafood" },
+      { "item": "Potato wedges", "price": "$7", "category": "barfood" },
+      { "item": "Burger", "price": "$18", "category": "burgers" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Bar-area happy hour at one of Houston's top fine-dining rooms; $10 select cocktails and house wine."
+  },
+  {
+    "name": "Kenny & Ziggy's New York Delicatessen",
+    "address": "1743 Post Oak Blvd, Houston, TX 77056",
+    "lat": 29.7482,
+    "lng": -95.4598,
+    "neighborhood": "Galleria",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "18:00",
+    "deals": [{ "item": "Appetizers", "price": "$5-15", "category": "barfood" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Bar seating only. $8 cocktails, $5 beers, $7 wine by the glass."
+  },
+  {
+    "name": "Bungalow Downtown",
+    "address": "407 Main St, Houston, TX 77002",
+    "lat": 29.7612,
+    "lng": -95.3614,
+    "neighborhood": "Downtown",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "19:00",
+    "deals": [
+      { "item": "Oysters", "price": "$1-3", "category": "seafood" },
+      { "item": "Appetizers", "price": "$8-10", "category": "barfood" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Mon-Thu 15:00-19:00; Friday ends at 18:00. $9 cocktails, $6 glasses of wine."
+  },
+  {
+    "name": "The Savoy",
+    "address": "4402 Emancipation Ave, Houston, TX 77004",
+    "lat": 29.7269,
+    "lng": -95.3711,
+    "neighborhood": "Third Ward",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "16:00",
+    "end": "20:00",
+    "deals": [
+      { "item": "Sliders, half off", "price": "50% off", "category": "burgers" },
+      { "item": "Half-portion quesadilla", "price": "$5", "category": "texmex" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Mon-Thu 16:00-20:00; Friday runs 16:00-22:00. $7 frozen drinks, $5 draft cocktails, $3 beers."
+  },
+  {
+    "name": "Aiko",
+    "address": "1902 Washington Ave, Houston, TX 77007",
+    "lat": 29.768,
+    "lng": -95.3774,
+    "neighborhood": "Washington Ave",
+    "days": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+    "start": "17:00",
+    "end": "18:30",
+    "deals": [{ "item": "Hot dishes", "price": "$3-10", "category": "sushi" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Second daily window 11:00-15:00 as well. Japanese izakaya-style; $5 hot sake, $10 cocktails."
+  },
+  {
+    "name": "El Patio",
+    "address": "6444 Westheimer Rd, Houston, TX 77057",
+    "lat": 29.7375,
+    "lng": -95.4978,
+    "neighborhood": "Galleria",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "16:00",
+    "end": "18:00",
+    "deals": [
+      { "item": "Appetizers and small entrees", "price": "$4-6", "category": "texmex" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Weekend happy hour Sat-Sun 11:00-18:00. Old-school Tex-Mex; discounted margaritas, $4.25 beer of the day."
+  },
+  {
+    "name": "Hugo's",
+    "address": "1600 Westheimer Rd, Houston, TX 77006",
+    "lat": 29.743,
+    "lng": -95.3997,
+    "neighborhood": "Montrose",
+    "days": ["tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "18:00",
+    "deals": [{ "item": "Tacos", "price": "$6-9", "category": "texmex" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Hugo Ortega's flagship interior-Mexican restaurant; $8-9 cocktails and discounted appetizers."
+  },
+  {
+    "name": "Kamp Houston",
+    "address": "6025 Westheimer Rd, Houston, TX 77057",
+    "lat": 29.7367,
+    "lng": -95.4893,
+    "neighborhood": "Galleria",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "16:00",
+    "end": "20:00",
+    "deals": [
+      { "item": "Raw oysters", "price": "$1", "category": "seafood" },
+      { "item": "Lamb chops", "price": "$5", "category": "barfood" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "$5 liquor during happy hour plus rotating daily specials."
+  },
+  {
+    "name": "Tiny Champions",
+    "address": "2617 McKinney St, Houston, TX 77003",
+    "lat": 29.7486,
+    "lng": -95.3509,
+    "neighborhood": "EaDo",
+    "days": ["mon", "tue", "wed", "thu"],
+    "start": "17:00",
+    "end": "18:00",
+    "deals": [{ "item": "Select pizzas, half off", "price": "50% off", "category": "pizza" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "From the Nancy's Hustle team. Half off wine by the glass, $6 cocktails, $3 beers."
+  },
+  {
+    "name": "Lucille's",
+    "address": "5512 La Branch St, Houston, TX 77004",
+    "lat": 29.7238,
+    "lng": -95.3852,
+    "neighborhood": "Museum District",
+    "days": ["tue", "wed", "thu"],
+    "start": "16:00",
+    "end": "18:00",
+    "deals": [{ "item": "Appetizers (Southern)", "price": "$6-8", "category": "barfood" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Chris Williams's Southern restaurant; $3 beer, $5 wine, $5 margaritas, $3 wells."
+  },
+  {
+    "name": "Brennan's of Houston",
+    "address": "3300 Smith St, Houston, TX 77006",
+    "lat": 29.7431,
+    "lng": -95.3815,
+    "neighborhood": "Midtown",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "14:00",
+    "end": "18:00",
+    "deals": [{ "item": "Bar bites (Creole)", "price": "$5-8", "category": "barfood" }],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Creole institution; $8 cocktails and glasses of wine in the bar."
+  },
+  {
+    "name": "Winnie's",
+    "address": "3622 Main St, Houston, TX 77002",
+    "lat": 29.7388,
+    "lng": -95.3797,
+    "neighborhood": "Midtown",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "18:00",
+    "deals": [
+      { "item": "Snacks", "price": "$6", "category": "barfood" },
+      { "item": "Gulf oysters (rotating special)", "price": "$2", "category": "seafood" },
+      { "item": "Wings (rotating special)", "price": "$1.59", "category": "barfood" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "Cajun-leaning Midtown spot; $6 house cocktails; oyster and wing deals are rotating specials."
+  },
+  {
+    "name": "The Den",
+    "address": "4835 Calhoun Rd, Houston, TX 77004",
+    "lat": 29.72,
+    "lng": -95.3385,
+    "neighborhood": "Third Ward",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "19:00",
+    "deals": [
+      { "item": "Burger, fries, and a pint combo", "price": "$15", "category": "burgers" }
+    ],
+    "sourceUrl": "https://www.theinfatuation.com/houston/guides/best-happy-hour-houston",
+    "sourceDate": "2026-05-14",
+    "notes": "$5 mules, $4 beers, $7 jumbo margaritas plus rotating specials."
+  },
+  {
+    "name": "Crawfish & Noodles",
+    "address": "11360 Bellaire Blvd, Suite 990, Houston, TX 77072",
+    "lat": 29.7042,
+    "lng": -95.5812,
+    "neighborhood": "Asiatown",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "18:00",
+    "deals": [{ "item": "Gulf oysters", "price": "$1", "category": "vietcajun" }],
+    "sourceUrl": "https://www.crawfishandnoodles.com/",
+    "sourceDate": "2026-07",
+    "notes": "James Beard-nominated Viet-Cajun institution (chef Trong Nguyen). Happy hour is dine-in only; discounted cocktails and beer also offered."
+  },
+  {
+    "name": "The Original Ninfa's Uptown",
+    "address": "1700 Post Oak Blvd, Ste 1-190, Houston, TX 77056",
+    "lat": 29.7491,
+    "lng": -95.4622,
+    "neighborhood": "Galleria",
+    "days": ["mon", "tue", "wed", "thu", "fri"],
+    "start": "15:00",
+    "end": "18:00",
+    "deals": [
+      { "item": "\"Panchito\" nachos", "price": "$5", "category": "texmex" },
+      { "item": "Chicken wings al pastor", "price": "$8", "category": "texmex" },
+      { "item": "Chicken tinga taquito dorado", "price": "$5", "category": "texmex" },
+      { "item": "Beef picadillo empanadas", "price": "$5", "category": "texmex" },
+      { "item": "Jalapeño rellenitos", "price": "$8", "category": "texmex" },
+      { "item": "Coctel costeño chico", "price": "$6", "category": "seafood" }
+    ],
+    "sourceUrl": "https://ninfas.com/menu/happy-hour/",
+    "sourceDate": "2025-11",
+    "notes": "Happy hour food bites are Uptown location only (drink specials incl. $7 Ninfaritas chain-wide); the original Navigation Blvd location does not run the food menu."
+  },
+  {
+    "name": "Marmo",
+    "address": "888 Westheimer Rd, Suite 109, Houston, TX 77006",
+    "lat": 29.7448,
+    "lng": -95.3903,
+    "neighborhood": "Montrose",
+    "days": ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+    "start": "15:00",
+    "end": "18:00",
+    "deals": [
+      { "item": "Oysters with calabrian chili mignonette", "price": "$2", "category": "seafood" },
+      { "item": "Tuscan fried chicken", "price": "$8", "category": "barfood" }
+    ],
+    "sourceUrl": "https://www.houstoniamag.com/eat-and-drink/best-houston-happy-hours",
+    "sourceDate": "2025",
+    "notes": "Italian chophouse in the Montrose Collective (marmoitalian.com); daily 3-6pm happy hour with $2 oysters and $5 signature dishes also reported."
+  }
+]
