@@ -4,17 +4,8 @@ import Link from "next/link";
 import type { Spot } from "@/lib/types";
 import { DAY_LABELS } from "@/lib/types";
 import { CATEGORIES } from "@/lib/categories";
-import { formatTimeRange, isLiveNow } from "@/lib/spots";
+import { formatTimeRange, isLiveNow, latestVerifiedAt } from "@/lib/spots";
 import { timeAgo } from "@/lib/format";
-
-/** Freshest "still current" vote across the spot's deals and hours. */
-function latestVerified(spot: Spot): string | null {
-  let latest: string | null = null;
-  for (const s of Object.values(spot.verification ?? {})) {
-    if (s.lastVerifiedAt && (!latest || s.lastVerifiedAt > latest)) latest = s.lastVerifiedAt;
-  }
-  return latest;
-}
 
 /** Photo-forward deal card. Until a spot has real dish photos, the header is a
  * warm two-tone gradient in its dominant category color with an oversized emoji
@@ -30,7 +21,7 @@ export default function DealCard({
   const dominant = spot.deals[0]?.category ?? "barfood";
   const meta = CATEGORIES[dominant];
   const live = isLiveNow(spot);
-  const verified = latestVerified(spot);
+  const verified = latestVerifiedAt(spot);
   // Real dish photos beat the og:image beat the category gradient.
   const headerImage = spot.deals.find((d) => d.photoUrl)?.photoUrl ?? spot.imageUrl ?? null;
   // Flash a badge for a day after a community update so a refreshed listing

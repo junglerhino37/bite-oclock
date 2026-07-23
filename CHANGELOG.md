@@ -3,6 +3,19 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.4.0 — 2026-07-23
+
+- **Bubbles rebuilt around the clock.** Bubbles are now restaurants, not
+  categories: live happy hours gravitate to the center with amber rings
+  that drain as time runs out, "starts soon" orbits with dashed rings,
+  done-for-today fades to the rim. Bubbles show "from $X" and end times;
+  tapping opens a preview (deals, distance, verified, full-page link).
+- **Pop to narrow** — eliminate bubbles you don't want; survivors grow;
+  the last one standing is dinner. **🎲 Surprise me** pops everything but
+  one open-or-soon spot.
+- **Price × distance value map** — a second bubble layout on real axes
+  (cheaper ↓, closer ←) using your location; bottom-left is "go here".
+
 ## 1.3.0 — 2026-07-23
 
 - **Tap-to-edit deals.** Every deal on a spot page has ✏️ Edit: fix the

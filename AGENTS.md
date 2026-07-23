@@ -78,8 +78,12 @@ app/
   api/verify/         cast 👍/👎 votes on deals/hours (auth token or IP-keyed)
   api/hours/          community hours edit → new hours-only version
   api/uploads/sign/   Supabase signed upload URL (501 until configured)
-components/           Browse, DealCard, FilterBar, MapView, BubbleView, AskBar,
-                      AuthButton, VerifyButtons, HoursEditor
+components/           Browse, DealCard, FilterBar, MapView, AskBar, AuthButton,
+                      VerifyButtons, HoursEditor, DealRow
+                      BubbleView — time-gravity field (live = center + draining
+                      amber ring), pop-to-eliminate, surprise-me, and a
+                      price × distance axis layout; shares Browse's filter
+                      state and geolocation
 lib/
   spots.ts            seed loading, validation, filtering, live-now time logic
   live.ts             seed + submissions merged into versioned spots + vote summaries

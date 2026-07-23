@@ -136,6 +136,25 @@ export function spotDistanceMiles(spot: Spot, origin: LatLng | null): number | n
   return distanceMiles(origin, { lat: spot.lat, lng: spot.lng });
 }
 
+/** Freshest "still current" vote across a spot's deals and hours. */
+export function latestVerifiedAt(spot: Spot): string | null {
+  let latest: string | null = null;
+  for (const s of Object.values(spot.verification ?? {})) {
+    if (s.lastVerifiedAt && (!latest || s.lastVerifiedAt > latest)) latest = s.lastVerifiedAt;
+  }
+  return latest;
+}
+
+/** Cheapest dollar amount across a spot's deals — "from $2". */
+export function minDealPrice(spot: Spot): number | null {
+  let min = Infinity;
+  for (const d of spot.deals) {
+    const m = d.price?.match(/\$\s*(\d+(?:\.\d+)?)/);
+    if (m) min = Math.min(min, parseFloat(m[1]));
+  }
+  return Number.isFinite(min) ? min : null;
+}
+
 export function applyFilter(
   spots: Spot[],
   filter: DealFilter,

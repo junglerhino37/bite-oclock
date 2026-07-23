@@ -50,29 +50,31 @@ export default function Browse({
   const [origin, setOrigin] = useState<LatLng | null>(null);
   const [geoNote, setGeoNote] = useState<string | null>(null);
 
-  /** Distance filtering needs the visitor's location — ask the browser the
-   * first time a "within X mi" option is picked. */
+  /** Ask the browser for location — used by the distance filter and the
+   * bubbles' price × distance map. */
+  const requestLocation = () => {
+    if (origin) return;
+    if (!("geolocation" in navigator)) {
+      setGeoNote("This browser can't share your location.");
+      return;
+    }
+    setGeoNote("Finding you…");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGeoNote(null);
+      },
+      () => {
+        setGeoNote("Couldn't get your location — allow location access to use distance features.");
+        setFilter((cur) => ({ ...cur, maxMiles: null }));
+      },
+      { maximumAge: 5 * 60 * 1000, timeout: 10 * 1000 },
+    );
+  };
+
   const changeFilter = (f: DealFilter) => {
     setFilter(f);
-    if (f.maxMiles !== null && !origin) {
-      if (!("geolocation" in navigator)) {
-        setGeoNote("This browser can't share your location, so distance filtering is off.");
-        setFilter({ ...f, maxMiles: null });
-        return;
-      }
-      setGeoNote("Finding you…");
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setGeoNote(null);
-        },
-        () => {
-          setGeoNote("Couldn't get your location — allow location access to filter by distance.");
-          setFilter((cur) => ({ ...cur, maxMiles: null }));
-        },
-        { maximumAge: 5 * 60 * 1000, timeout: 10 * 1000 },
-      );
-    }
+    if (f.maxMiles !== null && !origin) requestLocation();
   };
 
   const [sort, setSort] = useState<"az" | "new">("az");
@@ -161,7 +163,9 @@ export default function Browse({
           </div>
         ))}
       {view === "map" && <MapView spots={filtered} />}
-      {view === "bubbles" && <BubbleView spots={filtered} />}
+      {view === "bubbles" && (
+        <BubbleView spots={filtered} origin={origin} onRequestOrigin={requestLocation} />
+      )}
     </div>
   );
 }
