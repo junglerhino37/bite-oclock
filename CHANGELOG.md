@@ -3,6 +3,18 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.1.0 — 2026-07-23
+
+- **Happy-hour links** — "add a link to bar boheme <url>" in the Ask bar
+  attaches the page to the existing listing (tracking params stripped); a
+  "🔗 Happy hour page ↗" pill shows in the spot hero.
+- **Food images from restaurant sites** — a linked page's og:image becomes
+  the card photo and a soft hero backdrop until real dish photos exist.
+- **Ask bar everywhere** — restaurant pages have the bar too; searches hop
+  to the home page and run automatically.
+- Merged the two redundant CTA cards on the spot page into one.
+- Fix: the AI no longer mistakes link-adds for new restaurants.
+
 ## 1.0.0 — 2026-07-23
 
 First real release: the site went from prototype to daily-usable.

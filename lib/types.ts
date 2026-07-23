@@ -43,6 +43,8 @@ export interface Spot {
   notes: string | null;
   /** Menu snapshots from the current version (latest submission with photos). */
   photoUrls?: string[];
+  /** Preview image scraped from the spot's linked happy-hour page (og:image). */
+  imageUrl?: string | null;
   /** Submitter note on the current version ("cash only", "patio only"…). */
   communityNote?: string | null;
   /** When the current version of this listing was added (ISO, community only). */

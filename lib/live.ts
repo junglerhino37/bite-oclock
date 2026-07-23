@@ -30,6 +30,8 @@ interface SubRow {
   photo_paths?: string[] | null;
   note?: string | null;
   spot_slug?: string | null;
+  source_url?: string | null;
+  image_url?: string | null;
   created_at: string;
 }
 
@@ -90,7 +92,7 @@ export async function getAllSpots(): Promise<Spot[]> {
   const db = getServiceDb();
   if (!db) return seed;
 
-  const newCols = ", photo_paths, note, spot_slug";
+  const newCols = ", photo_paths, note, spot_slug, source_url, image_url";
   const subCols = `id, restaurant_name, neighborhood, days, start_time, end_time, deals, photo_path${newCols}, created_at`;
   const fetchSubs = (cols: string) =>
     db
@@ -178,6 +180,8 @@ export async function getAllSpots(): Promise<Spot[]> {
     if (!current || current.deals.length === 0) return null;
     const latestPhotos =
       [...versions].reverse().find((v) => v.photoUrls.length > 0)?.photoUrls ?? [];
+    const latestUrl = [...rows].reverse().find((r) => r.source_url)?.source_url ?? null;
+    const latestImage = [...rows].reverse().find((r) => r.image_url)?.image_url ?? null;
     const latestSub = rows[rows.length - 1];
     const neighborhood =
       base?.neighborhood ??
@@ -195,10 +199,11 @@ export async function getAllSpots(): Promise<Spot[]> {
       start: current.start,
       end: current.end,
       deals: current.deals,
-      sourceUrl: base?.sourceUrl ?? null,
+      sourceUrl: latestUrl ?? base?.sourceUrl ?? null,
       sourceDate: base?.sourceDate ?? null,
       notes: base?.notes ?? (rows.length > 0 ? "Community-submitted from a menu photo." : null),
       photoUrls: latestPhotos,
+      imageUrl: latestImage,
       communityNote: current.note,
       addedAt: current.source === "community" ? current.addedAt : null,
       history: versions.slice(0, -1).reverse(),

@@ -12,6 +12,63 @@ export const maxDuration = 30;
 const MAX_PHOTO = 10 * 1024 * 1024;
 const MAX_PHOTOS = 4;
 
+/** Validate a submitted link and strip ad-tracking params. Rejects anything
+ * that isn't a public http(s) host (no IPs/localhost — we fetch it below). */
+function cleanSourceUrl(raw: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return null;
+  const host = u.hostname.toLowerCase();
+  if (
+    !host.includes(".") ||
+    host === "localhost" ||
+    /^\d+\.\d+\.\d+\.\d+$/.test(host) ||
+    host.includes(":") ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal")
+  )
+    return null;
+  for (const k of [...u.searchParams.keys()]) {
+    if (/^(utm_|gad_|gclid|gclsrc|gbraid|wbraid|fbclid|mc_|igshid|msclkid)/i.test(k)) {
+      u.searchParams.delete(k);
+    }
+  }
+  u.username = "";
+  u.password = "";
+  const s = u.toString();
+  return s.length <= 500 ? s : null;
+}
+
+/** Grab the page's og:image so the listing gets a food photo from the
+ * restaurant's own site. Best-effort: any failure just means no image. */
+async function fetchOgImage(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(5000),
+      redirect: "follow",
+      headers: { "user-agent": "Mozilla/5.0 (compatible; bite-oclock/1.0)" },
+    });
+    if (!res.ok || !(res.headers.get("content-type") ?? "").includes("text/html")) return null;
+    const html = (await res.text()).slice(0, 400_000);
+    const m =
+      html.match(
+        /<meta[^>]+(?:property|name)=["']og:image(?::secure_url|:url)?["'][^>]*content=["']([^"']+)["']/i,
+      ) ??
+      html.match(
+        /<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']og:image(?::secure_url|:url)?["']/i,
+      );
+    if (!m?.[1]) return null;
+    const abs = new URL(m[1].replace(/&amp;/g, "&"), url).toString();
+    return abs.startsWith("http") && abs.length <= 800 ? abs : null;
+  } catch {
+    return null;
+  }
+}
+
 function sniffImageType(buf: Buffer): { mime: string; ext: string } | null {
   if (buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff)
     return { mime: "image/jpeg", ext: "jpg" };
@@ -52,6 +109,14 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid submission payload." }, { status: 400 });
   }
+  // Deal-less submissions are link/hours-only overlays — they need a target.
+  if (payload.deals.length === 0 && !payload.spot_slug) {
+    return NextResponse.json({ error: "Keep at least one deal." }, { status: 400 });
+  }
+  const sourceUrl = payload.source_url ? cleanSourceUrl(payload.source_url) : null;
+  if (payload.source_url && !sourceUrl) {
+    return NextResponse.json({ error: "That link doesn't look like a public URL." }, { status: 400 });
+  }
 
   const db = getServiceDb();
   if (!db) {
@@ -90,6 +155,8 @@ export async function POST(req: Request) {
     else photoPaths.push(path); // photos are nice-to-have; the submission still counts
   }
 
+  const imageUrl = sourceUrl ? await fetchOgImage(sourceUrl) : null;
+
   const slug = payload.spot_slug ?? slugifyName(payload.restaurant_name);
   const { data, error } = await db
     .from("submissions")
@@ -105,6 +172,8 @@ export async function POST(req: Request) {
       ...(photoPaths.length > 1 ? { photo_paths: photoPaths } : {}),
       ...(payload.note ? { note: payload.note } : {}),
       ...(payload.spot_slug ? { spot_slug: payload.spot_slug } : {}),
+      ...(sourceUrl ? { source_url: sourceUrl } : {}),
+      ...(imageUrl ? { image_url: imageUrl } : {}),
       status: "approved", // publishes immediately; votes are the quality gate
       submitter_ip_hash: createHash("sha256").update(key).digest("hex").slice(0, 16),
     })

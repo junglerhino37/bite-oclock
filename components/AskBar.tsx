@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { DealFilter, Spot } from "@/lib/types";
@@ -10,10 +10,11 @@ import { CATEGORIES, isCategory } from "@/lib/categories";
 
 interface AddIntent {
   restaurant_name: string;
-  item: string;
+  item: string | null;
   price: string | null;
-  category: Category;
+  category: Category | null;
   description: string | null;
+  url: string | null;
 }
 
 interface PendingAdd {
@@ -26,6 +27,7 @@ function normalizeName(s: string): string {
   return s
     .toLowerCase()
     .normalize("NFKD")
+    .replace(/\b(happy hour|menu|page)\b/g, "")
     .replace(/^(the|a)\s+/, "")
     .replace(/[^a-z0-9]+/g, "");
 }
@@ -67,14 +69,24 @@ function bestMatch(name: string, spots: Spot[]): Spot | null {
   return bestScore === Infinity ? null : best;
 }
 
-/** Natural-language bar: search questions become filters; "add $1 oysters at
- * julep" becomes a confirm-then-publish card (did-you-mean against known
- * spots, or a brand-new listing when nothing matches). */
+function prettyUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return (u.hostname + u.pathname).replace(/^www\./, "").replace(/\/$/, "");
+  } catch {
+    return url;
+  }
+}
+
+/** Natural-language bar. Searches become filters (standalone pages hand the
+ * question to the home page via ?q=); "add $1 oysters at julep" or "add a
+ * link to bar boheme <url>" become confirm-then-publish cards. */
 export default function AskBar({
   onFilter,
   spots,
 }: {
-  onFilter: (f: DealFilter) => void;
+  /** Present on the home page; absent = standalone (restaurant pages). */
+  onFilter?: (f: DealFilter) => void;
   spots: Spot[];
 }) {
   const router = useRouter();
@@ -83,9 +95,10 @@ export default function AskBar({
   const [note, setNote] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingAdd | null>(null);
   const [published, setPublished] = useState<{ slug: string; name: string } | null>(null);
+  const autoRan = useRef(false);
 
-  async function ask() {
-    const q = question.trim();
+  async function ask(qOverride?: string) {
+    const q = (qOverride ?? question).trim();
     if (!q || busy) return;
     setBusy(true);
     setNote(null);
@@ -102,8 +115,27 @@ export default function AskBar({
         setNote(data.error ?? "Something went wrong.");
         return;
       }
-      if (data.intent === "add" && data.add && isCategory(String(data.add.category))) {
-        setPending({ add: data.add, match: bestMatch(data.add.restaurant_name, spots) });
+      if (data.intent === "add" && data.add && (data.add.item || data.add.url)) {
+        const add: AddIntent = {
+          ...data.add,
+          category:
+            data.add.item && !isCategory(String(data.add.category))
+              ? "barfood"
+              : data.add.category,
+        };
+        const match = bestMatch(add.restaurant_name, spots);
+        if (!add.item && !match) {
+          setNote(
+            `Couldn't find "${add.restaurant_name}" to attach that link to — check the spelling, or create the listing first (add a deal or snap its menu).`,
+          );
+          return;
+        }
+        setPending({ add, match });
+        return;
+      }
+      if (!onFilter) {
+        // Standalone (restaurant page): run the search on the home page.
+        router.push(`/?q=${encodeURIComponent(q)}`);
         return;
       }
       const f = data.filter ?? {};
@@ -127,21 +159,44 @@ export default function AskBar({
     }
   }
 
+  // Home page: run a query handed over from a standalone bar (/?q=...).
+  useEffect(() => {
+    if (!onFilter || autoRan.current) return;
+    autoRan.current = true;
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) {
+      setQuestion(q);
+      window.history.replaceState(null, "", window.location.pathname);
+      void ask(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function publish() {
     if (!pending || busy) return;
     setBusy(true);
     setNote(null);
     const { add, match } = pending;
-    // Adding to an existing spot keeps its menu: same-named deal is replaced,
-    // everything else carries into the new version.
+    // With a deal: merge into the existing menu (same-named deal replaced).
+    // Link-only: empty deals = overlay that keeps the menu and adds the link.
+    const newDeal = add.item
+      ? [
+          {
+            item: add.item,
+            price: add.price,
+            category: add.category ?? "barfood",
+            description: add.description,
+          },
+        ]
+      : [];
     const deals = match
       ? [
           ...match.deals.filter(
-            (d) => normalizeName(d.item) !== normalizeName(add.item),
+            (d) => !add.item || normalizeName(d.item) !== normalizeName(add.item),
           ),
-          { item: add.item, price: add.price, category: add.category, description: add.description },
+          ...newDeal,
         ]
-      : [{ item: add.item, price: add.price, category: add.category, description: add.description }];
+      : newDeal;
     try {
       const form = new FormData();
       form.append(
@@ -153,8 +208,9 @@ export default function AskBar({
           days: match?.days ?? [],
           start: match?.start ?? null,
           end: match?.end ?? null,
-          deals,
+          deals: add.item ? deals : [],
           note: null,
+          source_url: add.url,
         }),
       );
       const res = await fetch("/api/submit", { method: "POST", body: form });
@@ -180,16 +236,17 @@ export default function AskBar({
     }
   }
 
-  const dealChip = (add: AddIntent) => (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-sunken px-2.5 py-1 text-sm text-ink">
-      {CATEGORIES[add.category].emoji} {add.item}
-      {add.price && (
-        <span className="font-data rounded-full bg-accent px-1.5 py-px text-xs font-semibold text-[#241c15]">
-          {add.price}
-        </span>
-      )}
-    </span>
-  );
+  const dealChip = (add: AddIntent) =>
+    add.item ? (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-sunken px-2.5 py-1 text-sm text-ink">
+        {CATEGORIES[add.category ?? "barfood"].emoji} {add.item}
+        {add.price && (
+          <span className="font-data rounded-full bg-accent px-1.5 py-px text-xs font-semibold text-[#241c15]">
+            {add.price}
+          </span>
+        )}
+      </span>
+    ) : null;
 
   return (
     <div>
@@ -203,7 +260,7 @@ export default function AskBar({
           className="min-w-0 flex-1 rounded-full border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none"
         />
         <button
-          onClick={ask}
+          onClick={() => void ask()}
           disabled={busy || !question.trim()}
           className="shrink-0 rounded-full bg-secondary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-40"
         >
@@ -222,13 +279,28 @@ export default function AskBar({
               ) : (
                 <span className="text-muted"> ({pending.match.neighborhood})</span>
               )}
-              ? This adds {dealChip(pending.add)} to its happy hour.
+              ?{" "}
+              {pending.add.item ? (
+                <>This adds {dealChip(pending.add)} to its happy hour.</>
+              ) : (
+                <>This links its page:</>
+              )}
+              {pending.add.url && (
+                <span className="font-data mt-1 block truncate text-xs text-muted">
+                  🔗 {prettyUrl(pending.add.url)}
+                </span>
+              )}
             </p>
           ) : (
             <p className="text-sm text-ink">
               <span className="font-display font-semibold">{pending.add.restaurant_name}</span>{" "}
               isn&rsquo;t listed yet. Create it with {dealChip(pending.add)}? You can add hours
               and a menu photo afterwards.
+              {pending.add.url && (
+                <span className="font-data mt-1 block truncate text-xs text-muted">
+                  🔗 {prettyUrl(pending.add.url)}
+                </span>
+              )}
             </p>
           )}
           <div className="flex flex-wrap gap-2">

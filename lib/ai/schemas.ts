@@ -48,6 +48,9 @@ export const SubmissionSchema = z.object({
   /** Free-text submitter note for things the menu photo doesn't say
    * ("cash only", "bar seating only", "must order a drink"). */
   note: z.string().max(500).nullable().optional(),
+  /** Link to the restaurant's happy-hour/menu page. Cleaned + verified
+   * server-side before storage. */
+  source_url: z.string().url().max(500).nullable().optional(),
   neighborhood: z.string().max(60).nullable(),
   days: z.array(dayEnum).max(7),
   start: hhmm,
@@ -61,7 +64,8 @@ export const SubmissionSchema = z.object({
         description: z.string().max(240).nullable(),
       }),
     )
-    .min(1)
+    // Empty = link/hours-only overlay of an existing spot; the submit route
+    // rejects deal-less submissions that don't target a spot_slug.
     .max(40),
 });
 export type Submission = z.infer<typeof SubmissionSchema>;
@@ -86,10 +90,13 @@ export type QueryFilter = z.infer<typeof QueryFilterSchema>;
  * normal /api/submit validation after the user confirms in the UI. */
 export const AskAddSchema = z.object({
   restaurant_name: z.string().min(1).max(120),
-  item: z.string().min(1).max(120),
+  /** Null for link-only adds ("add a link to X's happy hour <url>"). */
+  item: z.string().min(1).max(120).nullable(),
   price: z.string().max(24).nullable(),
-  category: categoryEnum,
+  category: categoryEnum.nullable().catch(null),
   description: z.string().max(240).nullable().catch(null),
+  /** Pasted happy-hour page link, when the message included one. */
+  url: z.string().url().max(500).nullable().catch(null),
 });
 export type AskAdd = z.infer<typeof AskAddSchema>;
 

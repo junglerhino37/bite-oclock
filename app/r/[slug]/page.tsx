@@ -2,12 +2,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getSpots, formatTimeRange } from "@/lib/spots";
-import { getAnySpot } from "@/lib/live";
+import { getAllSpots, getAnySpot } from "@/lib/live";
 import { CATEGORIES } from "@/lib/categories";
 import { DAYS, DAY_LABELS, verificationKey } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import VerifyButtons from "@/components/VerifyButtons";
 import HoursEditor from "@/components/HoursEditor";
+import AskBar from "@/components/AskBar";
 import LiveNow from "./live";
 
 // Seed spots are prebuilt; community versions and votes re-render on demand —
@@ -28,7 +29,9 @@ export async function generateMetadata({
 }
 
 export default async function SpotPage({ params }: { params: Promise<{ slug: string }> }) {
-  const spot = await getAnySpot((await params).slug);
+  const allSpots = await getAllSpots();
+  const { slug } = await params;
+  const spot = allSpots.find((s) => s.slug === slug);
   if (!spot) notFound();
   const dominant = CATEGORIES[spot.deals[0]?.category ?? "barfood"];
   const history = spot.history ?? [];
@@ -40,26 +43,44 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
         className="relative overflow-hidden rounded-3xl px-6 py-14 sm:px-10"
         style={{ background: `linear-gradient(140deg, ${dominant.color}33, ${dominant.color}66)` }}
       >
+        {spot.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={spot.imageUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-30"
+          />
+        )}
         <span aria-hidden className="absolute -right-4 -top-6 text-[120px] opacity-40">
           {dominant.emoji}
         </span>
-        <p className="text-sm font-medium text-muted">
+        <p className="relative text-sm font-medium text-muted">
           <Link href="/" className="hover:text-ink">
             ← All happy hours
           </Link>
         </p>
-        <h1 className="font-display mt-2 text-4xl font-semibold text-ink sm:text-5xl">
+        <h1 className="font-display relative mt-2 text-4xl font-semibold text-ink sm:text-5xl">
           {spot.name}
         </h1>
-        <p className="font-data mt-2 text-sm text-ink/80">
+        <p className="font-data relative mt-2 text-sm text-ink/80">
           {spot.neighborhood}
           {spot.address ? ` · ${spot.address}` : ""}
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="relative mt-4 flex flex-wrap items-center gap-2">
           <LiveNow spot={spot} />
           <span className="font-data rounded-full bg-surface/90 px-3 py-1 text-sm text-ink shadow-sm">
             {formatTimeRange(spot)}
           </span>
+          {spot.sourceUrl && (
+            <a
+              href={spot.sourceUrl}
+              target="_blank"
+              rel="nofollow noopener noreferrer"
+              className="font-data rounded-full bg-surface/90 px-3 py-1 text-sm text-ink shadow-sm transition-colors hover:text-primary"
+            >
+              🔗 Happy hour page ↗
+            </a>
+          )}
           {spot.addedAt && (
             <span
               suppressHydrationWarning
@@ -72,6 +93,8 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
           )}
         </div>
       </div>
+
+      <AskBar spots={allSpots} />
 
       {spot.communityNote && (
         <p className="rounded-2xl border border-line bg-sunken/60 px-5 py-3.5 text-sm text-ink">
@@ -158,9 +181,17 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
 
       {photos.length > 0 ? (
         <section>
-          <h2 className="font-display text-2xl font-semibold text-ink">
-            Menu snapshot{photos.length > 1 ? "s" : ""}
-          </h2>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-2xl font-semibold text-ink">
+              Menu snapshot{photos.length > 1 ? "s" : ""}
+            </h2>
+            <Link
+              href={`/submit?spot=${spot.slug}`}
+              className="shrink-0 rounded-full border border-line bg-surface px-4 py-1.5 text-sm text-ink transition-colors hover:text-primary"
+            >
+              📸 Update this happy hour
+            </Link>
+          </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {photos.map((url, i) => (
               <figure
@@ -183,15 +214,16 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
         </section>
       ) : (
         <section className="rounded-2xl border-2 border-dashed border-line bg-surface p-6 text-center">
-          <p className="font-display text-lg text-ink">No menu snapshot yet — snap one 📸</p>
+          <p className="font-display text-lg text-ink">Been here lately? 📸</p>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted">
-            A photo of the actual happy hour menu is the best proof these deals are real.
+            Vote on the deals above so everyone knows what&rsquo;s still real — and snap the
+            happy hour menu: a photo is the best proof, and this page updates instantly.
           </p>
           <Link
             href={`/submit?spot=${spot.slug}`}
             className="mt-4 inline-block rounded-full bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover"
           >
-            Add a photo or update this deal
+            📸 Update this happy hour
           </Link>
         </section>
       )}
@@ -250,20 +282,6 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
           </ol>
         </details>
       )}
-
-      <section className="rounded-2xl border-2 border-dashed border-line bg-surface p-6 text-center">
-        <p className="font-display text-lg text-ink">Been here lately?</p>
-        <p className="mx-auto mt-1 max-w-md text-sm text-muted">
-          Vote on the deals above so everyone knows what&rsquo;s still real — or snap the newest
-          menu and this page updates instantly.
-        </p>
-        <Link
-          href={`/submit?spot=${spot.slug}`}
-          className="mt-4 inline-block rounded-full bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover"
-        >
-          📸 Update this happy hour
-        </Link>
-      </section>
 
       <footer className="text-xs text-muted">
         {spot.sourceUrl ? (

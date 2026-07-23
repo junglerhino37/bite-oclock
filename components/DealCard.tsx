@@ -47,13 +47,24 @@ export default function DealCard({
           background: `linear-gradient(135deg, ${meta.color}26, ${meta.color}59)`,
         }}
       >
-        <span
-          aria-hidden
-          className="text-6xl transition-transform duration-300 group-hover:scale-110"
-          style={{ transitionTimingFunction: "var(--ease-spring)" }}
-        >
-          {meta.emoji}
-        </span>
+        {spot.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={spot.imageUrl}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            style={{ transitionTimingFunction: "var(--ease-spring)" }}
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="text-6xl transition-transform duration-300 group-hover:scale-110"
+            style={{ transitionTimingFunction: "var(--ease-spring)" }}
+          >
+            {meta.emoji}
+          </span>
+        )}
         {live && (
           <span className="live-dot absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-[#241c15]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#241c15]" /> LIVE NOW
