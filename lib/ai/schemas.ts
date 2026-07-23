@@ -41,6 +41,8 @@ export const QueryFilterSchema = z.object({
   neighborhood: z.string().max(60).nullable(),
   day: dayEnum.nullable(),
   live_now: z.boolean(),
-  answer_style_hint: z.string().max(200).nullable(),
+  // Advisory only — an overlong hint must never sink the whole response,
+  // so invalid values degrade to null instead of failing the parse.
+  answer_style_hint: z.string().max(200).nullable().catch(null),
 });
 export type QueryFilter = z.infer<typeof QueryFilterSchema>;
