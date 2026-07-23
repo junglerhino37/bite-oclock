@@ -31,6 +31,8 @@ export default function DealCard({
   const meta = CATEGORIES[dominant];
   const live = isLiveNow(spot);
   const verified = latestVerified(spot);
+  // Real dish photos beat the og:image beat the category gradient.
+  const headerImage = spot.deals.find((d) => d.photoUrl)?.photoUrl ?? spot.imageUrl ?? null;
   // Flash a badge for a day after a community update so a refreshed listing
   // stands out on the grid (an update changes an existing card in place).
   const updatedRecently =
@@ -47,10 +49,10 @@ export default function DealCard({
           background: `linear-gradient(135deg, ${meta.color}26, ${meta.color}59)`,
         }}
       >
-        {spot.imageUrl ? (
+        {headerImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={spot.imageUrl}
+            src={headerImage}
             alt=""
             loading="lazy"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"

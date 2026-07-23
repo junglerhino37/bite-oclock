@@ -21,6 +21,9 @@ export interface Deal {
   category: Category;
   /** Menu sub-text under the dish (ingredients/preparation), when present. */
   description?: string | null;
+  /** Community dish photo — storage path (persisted) and public URL (display). */
+  photoPath?: string | null;
+  photoUrl?: string | null;
 }
 
 export interface Spot {

@@ -35,19 +35,21 @@ interface SubRow {
   created_at: string;
 }
 
-function parseDeals(raw: unknown): Deal[] {
-  return (Array.isArray(raw) ? raw : []).flatMap((d: Record<string, unknown>) =>
-    typeof d.item === "string" && isCategory(String(d.category))
-      ? [
-          {
-            item: d.item,
-            price: typeof d.price === "string" ? d.price : null,
-            category: String(d.category) as Deal["category"],
-            description: typeof d.description === "string" ? d.description : null,
-          },
-        ]
-      : [],
-  );
+function parseDeals(raw: unknown, urlFor?: (path: string) => string | null): Deal[] {
+  return (Array.isArray(raw) ? raw : []).flatMap((d: Record<string, unknown>) => {
+    if (typeof d.item !== "string" || !isCategory(String(d.category))) return [];
+    const photoPath = typeof d.photo_path === "string" ? d.photo_path : null;
+    return [
+      {
+        item: d.item,
+        price: typeof d.price === "string" ? d.price : null,
+        category: String(d.category) as Deal["category"],
+        description: typeof d.description === "string" ? d.description : null,
+        photoPath,
+        photoUrl: photoPath && urlFor ? urlFor(photoPath) : null,
+      },
+    ];
+  });
 }
 
 function parseDays(raw: unknown): Day[] {
@@ -163,7 +165,7 @@ export async function getAllSpots(): Promise<Spot[]> {
     for (const row of rows) {
       const prev = versions[versions.length - 1];
       const days = parseDays(row.days);
-      const deals = parseDeals(row.deals);
+      const deals = parseDeals(row.deals, photoUrl);
       versions.push({
         // Hours-only edits carry the menu forward; menu-only photos keep hours.
         days: days.length > 0 ? days : (prev?.days ?? []),

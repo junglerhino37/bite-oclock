@@ -65,6 +65,8 @@ export const SubmissionSchema = z.object({
         price: z.string().max(24).nullable(),
         category: categoryEnum,
         description: z.string().max(240).nullable(),
+        /** Storage path of a community dish photo, carried across versions. */
+        photo_path: z.string().max(300).nullable().optional(),
       }),
     )
     // Empty = link/hours-only overlay of an existing spot; the submit route

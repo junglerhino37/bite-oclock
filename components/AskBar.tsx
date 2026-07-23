@@ -149,9 +149,15 @@ export default function AskBar({
       : [];
     const deals = match
       ? [
-          ...match.deals.filter(
-            (d) => !add.item || normalizeName(d.item) !== normalizeName(add.item),
-          ),
+          ...match.deals
+            .filter((d) => !add.item || normalizeName(d.item) !== normalizeName(add.item))
+            .map((d) => ({
+              item: d.item,
+              price: d.price,
+              category: d.category,
+              description: d.description ?? null,
+              photo_path: d.photoPath ?? null,
+            })),
           ...newDeal,
         ]
       : newDeal;

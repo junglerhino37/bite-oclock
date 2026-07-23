@@ -8,6 +8,7 @@ import { DAYS, DAY_LABELS, verificationKey } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import VerifyButtons from "@/components/VerifyButtons";
 import HoursEditor from "@/components/HoursEditor";
+import DealRow from "@/components/DealRow";
 import AskBar from "@/components/AskBar";
 import LiveNow from "./live";
 
@@ -105,48 +106,18 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
 
       <section>
         <h2 className="font-display text-2xl font-semibold text-ink">The deals</h2>
+        <p className="mt-1 text-xs text-muted">
+          Tap ✏️ on any deal to fix its price, add a dish photo, or update it.
+        </p>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-          {spot.deals.map((deal, i) => {
-            const meta = CATEGORIES[deal.category];
-            return (
-              <li
-                key={i}
-                className="space-y-3 rounded-2xl border border-line bg-surface p-4 shadow-sm"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-lg"
-                      style={{ background: `${meta.color}26` }}
-                    >
-                      {meta.emoji}
-                    </span>
-                    <div>
-                      <p className="font-medium text-ink">{deal.item}</p>
-                      {deal.description && (
-                        <p className="text-xs italic text-muted">{deal.description}</p>
-                      )}
-                      <p className="text-xs text-muted">{meta.label}</p>
-                    </div>
-                  </div>
-                  {deal.price && (
-                    <span className="font-data rounded-full bg-accent px-3 py-1 text-sm font-semibold text-[#241c15]">
-                      {deal.price}
-                    </span>
-                  )}
-                </div>
-                <div className="border-t border-line pt-2.5">
-                  <VerifyButtons
-                    slug={spot.slug}
-                    kind="deal"
-                    target={deal.item}
-                    summary={spot.verification?.[verificationKey("deal", deal.item)]}
-                    compact
-                  />
-                </div>
-              </li>
-            );
-          })}
+          {spot.deals.map((deal, i) => (
+            <DealRow
+              key={`${deal.item}-${i}`}
+              slug={spot.slug}
+              deal={deal}
+              summary={spot.verification?.[verificationKey("deal", deal.item)]}
+            />
+          ))}
         </ul>
       </section>
 

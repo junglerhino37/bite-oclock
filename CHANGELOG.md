@@ -3,6 +3,15 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.3.0 — 2026-07-23
+
+- **Tap-to-edit deals.** Every deal on a spot page has ✏️ Edit: fix the
+  name/price/description/category, attach a dish photo, or remove it.
+  Price-less deals show a "+ price" button. Edits publish instantly as a
+  new version; renames/removals reset that deal's verification votes.
+- Dish photos show on the deal row and take over the home-page card
+  header (dish photo > linked-page image > category gradient).
+
 ## 1.2.0 — 2026-07-23
 
 - **One listing per physical restaurant.** Photo submissions now fuzzy-match
