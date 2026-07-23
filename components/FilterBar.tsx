@@ -8,10 +8,12 @@ export default function FilterBar({
   filter,
   onChange,
   neighborhoods,
+  today,
 }: {
   filter: DealFilter;
   onChange: (f: DealFilter) => void;
   neighborhoods: string[];
+  today: Day;
 }) {
   const toggleCategory = (c: Category) =>
     onChange({
@@ -34,7 +36,7 @@ export default function FilterBar({
             }`}
           >
             <span className={`h-2 w-2 rounded-full ${filter.liveNow ? "bg-[#241c15]" : "bg-accent"} ${filter.liveNow ? "" : "live-dot"}`} />
-            Live now
+            Open now
           </button>
           {CATEGORY_KEYS.map((c) => {
             const active = filter.categories.includes(c);
@@ -71,6 +73,22 @@ export default function FilterBar({
           {DAYS.map((d) => (
             <option key={d} value={d}>
               {DAY_LABELS[d]}
+              {d === today ? " (today)" : ""}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filter.maxMiles ?? ""}
+          onChange={(e) =>
+            onChange({ ...filter, maxMiles: e.target.value ? Number(e.target.value) : null })
+          }
+          className="rounded-full border border-line bg-surface px-3 py-1.5 text-ink"
+          aria-label="Filter by distance"
+        >
+          <option value="">Any distance</option>
+          {[1, 2, 5, 10].map((m) => (
+            <option key={m} value={m}>
+              📍 Within {m} mi
             </option>
           ))}
         </select>
@@ -89,16 +107,25 @@ export default function FilterBar({
         </select>
         {(filter.categories.length > 0 ||
           filter.neighborhood ||
-          filter.day ||
+          filter.day !== today ||
           filter.liveNow ||
-          filter.foodTerms.length > 0) && (
+          filter.foodTerms.length > 0 ||
+          filter.maxMiles !== null) && (
           <button
             onClick={() =>
-              onChange({ categories: [], neighborhood: null, day: null, liveNow: false, foodTerms: [] })
+              // "Cleared" means back to the default view: today, everything else off.
+              onChange({
+                categories: [],
+                neighborhood: null,
+                day: today,
+                liveNow: false,
+                foodTerms: [],
+                maxMiles: null,
+              })
             }
             className="rounded-full px-3 py-1.5 text-muted underline decoration-line underline-offset-4 hover:text-ink"
           >
-            Clear all
+            Reset
           </button>
         )}
       </div>

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createHash } from "crypto";
 import { SubmissionSchema } from "@/lib/ai/schemas";
 import { getServiceDb, UPLOADS_BUCKET } from "@/lib/db";
+import { slugifyName } from "@/lib/live";
 import { rateLimit, clientKey } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
@@ -28,8 +30,8 @@ function sniffImageType(buf: Buffer): { mime: string; ext: string } | null {
 
 /** Persist a human-reviewed submission (edited extraction + source photo).
  * Multipart: 'payload' = JSON, 'photo' = image (optional).
- * PROTOTYPE MODE: submissions auto-approve and go live on the next ISR pass —
- * see "Prototype mode" in AGENTS.md for how to turn moderation back on. */
+ * Submissions publish immediately and are kept honest by community
+ * verification votes (see "Community verification" in AGENTS.md). */
 export async function POST(req: Request) {
   const key = clientKey(req);
   if (!rateLimit(`submit:${key}`, 10, 60 * 60 * 1000)) {
@@ -78,6 +80,7 @@ export async function POST(req: Request) {
     }
   }
 
+  const slug = payload.spot_slug ?? slugifyName(payload.restaurant_name);
   const { data, error } = await db
     .from("submissions")
     .insert({
@@ -88,7 +91,9 @@ export async function POST(req: Request) {
       end_time: payload.end,
       deals: payload.deals,
       photo_path: photoPath,
-      status: "approved", // prototype mode: skip the moderation queue (AGENTS.md)
+      // Omitted when absent so instances that predate migration 0003 still work.
+      ...(payload.spot_slug ? { spot_slug: payload.spot_slug } : {}),
+      status: "approved", // publishes immediately; votes are the quality gate
       submitter_ip_hash: createHash("sha256").update(key).digest("hex").slice(0, 16),
     })
     .select("id")
@@ -98,5 +103,9 @@ export async function POST(req: Request) {
     console.error("submission insert failed:", error.message);
     return NextResponse.json({ error: "Could not save submission." }, { status: 502 });
   }
-  return NextResponse.json({ stored: true, id: data.id });
+
+  // Live right away — no waiting on the 5-minute ISR window.
+  revalidatePath("/");
+  revalidatePath(`/r/${slug}`);
+  return NextResponse.json({ stored: true, id: data.id, slug });
 }

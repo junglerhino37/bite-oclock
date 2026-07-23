@@ -41,6 +41,40 @@ export interface Spot {
   sourceUrl: string | null;
   sourceDate: string | null;
   notes: string | null;
+  /** Latest community menu snapshot, when one has been uploaded. */
+  photoUrl?: string | null;
+  /** When the current version of this listing was added (ISO, community only). */
+  addedAt?: string | null;
+  /** Older versions of the happy hour, newest first (excludes the current one). */
+  history?: SpotVersion[];
+  /** Community votes keyed by 'hours' or 'deal:<item>'. */
+  verification?: Record<string, VoteSummary>;
+}
+
+export function verificationKey(kind: "deal" | "hours", target: string): string {
+  return kind === "hours" ? "hours" : `deal:${target}`;
+}
+
+/** Aggregated community votes for one target ('hours' or a deal item). */
+export interface VoteSummary {
+  up: number;
+  down: number;
+  /** When the newest "still current" vote was cast — the last-verified date. */
+  lastVerifiedAt: string | null;
+}
+
+/** One historical state of a spot's happy hour (seed baseline or a
+ * community submission), used for the folded history on the spot page. */
+export interface SpotVersion {
+  days: Day[];
+  start: string | null;
+  end: string | null;
+  deals: Deal[];
+  /** Menu snapshot uploaded with this version, when there was one. */
+  photoUrl: string | null;
+  /** ISO timestamp (community) or source date string (seed). */
+  addedAt: string | null;
+  source: "seed" | "community";
 }
 
 export interface DealFilter {
@@ -50,6 +84,9 @@ export interface DealFilter {
   liveNow: boolean;
   /** Free-text food terms from the AI query ("oysters", "queso"). */
   foodTerms: string[];
+  /** Only spots within this many miles of the visitor; null = anywhere.
+   * Needs the visitor's location — spots without coords are excluded. */
+  maxMiles: number | null;
 }
 
 export const EMPTY_FILTER: DealFilter = {
@@ -58,4 +95,5 @@ export const EMPTY_FILTER: DealFilter = {
   day: null,
   liveNow: false,
   foodTerms: [],
+  maxMiles: null,
 };

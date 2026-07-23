@@ -1,12 +1,15 @@
 import Browse from "@/components/Browse";
 import { getAllSpots } from "@/lib/live";
+import { houstonNow } from "@/lib/spots";
 
-// Re-render every 5 min so approved community submissions show up without a deploy.
+// Re-render every 5 min so the "today" default tracks the clock; community
+// writes revalidate this page immediately via revalidatePath.
 export const revalidate = 300;
 
 export default async function HomePage() {
   const spots = await getAllSpots();
   const neighborhoods = [...new Set(spots.map((s) => s.neighborhood))].sort();
+  const today = houstonNow().day;
   return (
     <div className="space-y-8 pt-8">
       <section className="max-w-2xl">
@@ -18,7 +21,7 @@ export default async function HomePage() {
           hour. Always confirm with the restaurant; kitchens change their minds.
         </p>
       </section>
-      <Browse spots={spots} neighborhoods={neighborhoods} />
+      <Browse spots={spots} neighborhoods={neighborhoods} today={today} />
     </div>
   );
 }

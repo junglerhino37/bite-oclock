@@ -1,11 +1,11 @@
 import "server-only";
-import { getServiceDb } from "./db";
+import { getServiceDb, UPLOADS_BUCKET } from "./db";
 import { getSpots } from "./spots";
-import type { Day, Spot } from "./types";
+import type { Day, Deal, Spot, SpotVersion, VoteSummary } from "./types";
 import { DAYS } from "./types";
 import { isCategory } from "./categories";
 
-function slugify(name: string): string {
+export function slugifyName(name: string): string {
   return name
     .toLowerCase()
     .normalize("NFKD")
@@ -18,66 +18,189 @@ function hhmm(t: unknown): string | null {
   return typeof t === "string" && /^\d{2}:\d{2}/.test(t) ? t.slice(0, 5) : null;
 }
 
-/** Seed spots + approved community submissions, merged for the browse surface.
- * Without a configured database this is just the seed — same behavior as before. */
+interface SubRow {
+  id: string;
+  restaurant_name: string;
+  neighborhood: string | null;
+  days: unknown;
+  start_time: unknown;
+  end_time: unknown;
+  deals: unknown;
+  photo_path?: string | null;
+  spot_slug?: string | null;
+  created_at: string;
+}
+
+function parseDeals(raw: unknown): Deal[] {
+  return (Array.isArray(raw) ? raw : []).flatMap((d: Record<string, unknown>) =>
+    typeof d.item === "string" && isCategory(String(d.category))
+      ? [
+          {
+            item: d.item,
+            price: typeof d.price === "string" ? d.price : null,
+            category: String(d.category) as Deal["category"],
+            description: typeof d.description === "string" ? d.description : null,
+          },
+        ]
+      : [],
+  );
+}
+
+function parseDays(raw: unknown): Day[] {
+  return (Array.isArray(raw) ? raw : []).filter((d): d is Day => DAYS.includes(d as Day));
+}
+
+interface VoteRow {
+  spot_slug: string;
+  kind: string;
+  target: string;
+  vote: number;
+  created_at: string;
+}
+
+function summarizeVotes(rows: VoteRow[]): Map<string, Record<string, VoteSummary>> {
+  const bySlug = new Map<string, Record<string, VoteSummary>>();
+  for (const v of rows) {
+    const key = v.kind === "hours" ? "hours" : `deal:${v.target}`;
+    const forSlug = bySlug.get(v.spot_slug) ?? {};
+    const s = forSlug[key] ?? { up: 0, down: 0, lastVerifiedAt: null };
+    if (v.vote > 0) {
+      s.up += 1;
+      if (!s.lastVerifiedAt || v.created_at > s.lastVerifiedAt) s.lastVerifiedAt = v.created_at;
+    } else {
+      s.down += 1;
+    }
+    forSlug[key] = s;
+    bySlug.set(v.spot_slug, forSlug);
+  }
+  return bySlug;
+}
+
+/** Browse surface: seed spots overlaid with community submissions and votes.
+ *
+ * Submissions targeting an existing slug (via spot_slug, or a name that
+ * slugifies to it) become new *versions* of that spot: the newest version's
+ * days/times/deals/photo win, older ones fold into `history`. Submissions for
+ * unknown restaurants create new community spots (no coords → list/bubbles
+ * only). Without a configured database this is just the seed. */
 export async function getAllSpots(): Promise<Spot[]> {
   const seed = getSpots();
   const db = getServiceDb();
   if (!db) return seed;
 
-  const { data, error } = await db
-    .from("submissions")
-    .select("id, restaurant_name, neighborhood, days, start_time, end_time, deals")
-    .eq("status", "approved")
-    .limit(500);
-  if (error || !data) {
-    if (error) console.error("live spots query failed:", error.message);
+  const subCols =
+    "id, restaurant_name, neighborhood, days, start_time, end_time, deals, photo_path, spot_slug, created_at";
+  const fetchSubs = (cols: string) =>
+    db
+      .from("submissions")
+      .select(cols)
+      .eq("status", "approved")
+      .order("created_at", { ascending: true })
+      .limit(1000) as unknown as Promise<{
+      data: SubRow[] | null;
+      error: { message: string } | null;
+    }>;
+  let subsRes = await fetchSubs(subCols);
+  if (subsRes.error) {
+    // Instance predates migration 0003 (no spot_slug column) — degrade gracefully.
+    subsRes = await fetchSubs(subCols.replace(", spot_slug", ""));
+  }
+  if (subsRes.error || !subsRes.data) {
+    if (subsRes.error) console.error("live spots query failed:", subsRes.error.message);
     return seed;
   }
 
-  const seen = new Set(seed.map((s) => s.slug));
-  const live: Spot[] = data.flatMap((row) => {
-    let slug = slugify(row.restaurant_name);
-    if (!slug) return [];
-    while (seen.has(slug)) slug = `${slug}-community`;
-    seen.add(slug);
-    const deals = (Array.isArray(row.deals) ? row.deals : []).flatMap(
-      (d: Record<string, unknown>) =>
-        typeof d.item === "string" && isCategory(String(d.category))
-          ? [
-              {
-                item: d.item,
-                price: typeof d.price === "string" ? d.price : null,
-                category: String(d.category) as Spot["deals"][number]["category"],
-                description: typeof d.description === "string" ? d.description : null,
-              },
-            ]
-          : [],
-    );
-    if (deals.length === 0) return [];
-    return [
-      {
-        id: `sub-${row.id}`,
-        slug,
-        name: row.restaurant_name,
-        address: "",
-        lat: null, // not geocoded yet — list/bubbles only, not the map
-        lng: null,
-        neighborhood: row.neighborhood ?? "Houston",
-        days: (Array.isArray(row.days) ? row.days : []).filter((d): d is Day =>
-          DAYS.includes(d as Day),
-        ),
-        start: hhmm(row.start_time),
-        end: hhmm(row.end_time),
-        deals,
-        sourceUrl: null,
-        sourceDate: null,
-        notes: "Community-submitted from a menu photo.",
-      },
-    ];
-  });
+  // Votes table may not exist yet either — treat as empty then.
+  const votesRes = await db
+    .from("votes")
+    .select("spot_slug, kind, target, vote, created_at")
+    .limit(10000);
+  const votes = summarizeVotes((votesRes.data as VoteRow[] | null) ?? []);
 
-  return [...seed, ...live].sort((a, b) => a.name.localeCompare(b.name));
+  const photoUrl = (path: string | null | undefined): string | null =>
+    path ? db.storage.from(UPLOADS_BUCKET).getPublicUrl(path).data.publicUrl : null;
+
+  // Group submissions by the spot they belong to.
+  const bySlug = new Map<string, SubRow[]>();
+  for (const row of subsRes.data as SubRow[]) {
+    const slug = row.spot_slug?.trim() || slugifyName(row.restaurant_name);
+    if (!slug) continue;
+    const group = bySlug.get(slug);
+    if (group) group.push(row);
+    else bySlug.set(slug, [row]);
+  }
+
+  const spots: Spot[] = [];
+
+  const overlay = (base: Spot | null, slug: string, rows: SubRow[]): Spot | null => {
+    const versions: SpotVersion[] = [];
+    if (base) {
+      versions.push({
+        days: base.days,
+        start: base.start,
+        end: base.end,
+        deals: base.deals,
+        photoUrl: null,
+        addedAt: base.sourceDate,
+        source: "seed",
+      });
+    }
+    for (const row of rows) {
+      const prev = versions[versions.length - 1];
+      const days = parseDays(row.days);
+      const deals = parseDeals(row.deals);
+      versions.push({
+        // Hours-only edits carry the menu forward; menu-only photos keep hours.
+        days: days.length > 0 ? days : (prev?.days ?? []),
+        start: hhmm(row.start_time) ?? (deals.length === 0 ? null : (prev?.start ?? null)),
+        end: hhmm(row.end_time) ?? (deals.length === 0 ? null : (prev?.end ?? null)),
+        deals: deals.length > 0 ? deals : (prev?.deals ?? []),
+        photoUrl: photoUrl(row.photo_path),
+        addedAt: row.created_at,
+        source: "community",
+      });
+    }
+    const current = versions[versions.length - 1];
+    if (!current || current.deals.length === 0) return null;
+    const latestPhoto = [...versions].reverse().find((v) => v.photoUrl)?.photoUrl ?? null;
+    const latestSub = rows[rows.length - 1];
+    const neighborhood =
+      base?.neighborhood ??
+      [...rows].reverse().find((r) => r.neighborhood)?.neighborhood ??
+      "Houston";
+    return {
+      id: base?.id ?? `sub-${latestSub?.id ?? slug}`,
+      slug,
+      name: base?.name ?? rows[0].restaurant_name,
+      address: base?.address ?? "",
+      lat: base?.lat ?? null, // community spots aren't geocoded — no map pin
+      lng: base?.lng ?? null,
+      neighborhood,
+      days: current.days,
+      start: current.start,
+      end: current.end,
+      deals: current.deals,
+      sourceUrl: base?.sourceUrl ?? null,
+      sourceDate: base?.sourceDate ?? null,
+      notes: base?.notes ?? (rows.length > 0 ? "Community-submitted from a menu photo." : null),
+      photoUrl: latestPhoto,
+      addedAt: current.source === "community" ? current.addedAt : null,
+      history: versions.slice(0, -1).reverse(),
+      verification: votes.get(slug),
+    };
+  };
+
+  for (const s of seed) {
+    const rows = bySlug.get(s.slug) ?? [];
+    bySlug.delete(s.slug);
+    spots.push(overlay(s, s.slug, rows) ?? { ...s, verification: votes.get(s.slug) });
+  }
+  for (const [slug, rows] of bySlug) {
+    const spot = overlay(null, slug, rows);
+    if (spot) spots.push(spot);
+  }
+
+  return spots.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getAnySpot(slug: string): Promise<Spot | undefined> {

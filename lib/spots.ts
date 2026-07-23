@@ -103,7 +103,7 @@ export function isLiveNow(spot: Spot, now: Date = new Date()): boolean {
   return minutes >= toMinutes(spot.start) && minutes < toMinutes(spot.end);
 }
 
-export function formatTimeRange(spot: Spot): string {
+export function formatTimeRange(spot: { start: string | null; end: string | null }): string {
   if (!spot.start || !spot.end) return "hours vary";
   const fmt = (hhmm: string) => {
     const [h, m] = hhmm.split(":").map(Number);
@@ -114,8 +114,40 @@ export function formatTimeRange(spot: Spot): string {
   return `${fmt(spot.start)}–${fmt(spot.end)}`;
 }
 
-export function applyFilter(spots: Spot[], filter: DealFilter, now: Date = new Date()): Spot[] {
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+/** Great-circle (haversine) distance in miles. */
+export function distanceMiles(a: LatLng, b: LatLng): number {
+  const R = 3958.8;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+export function spotDistanceMiles(spot: Spot, origin: LatLng | null): number | null {
+  if (!origin || spot.lat === null || spot.lng === null) return null;
+  return distanceMiles(origin, { lat: spot.lat, lng: spot.lng });
+}
+
+export function applyFilter(
+  spots: Spot[],
+  filter: DealFilter,
+  now: Date = new Date(),
+  origin: LatLng | null = null,
+): Spot[] {
   return spots.filter((spot) => {
+    // Distance is a no-op until the visitor's location arrives.
+    if (filter.maxMiles !== null && origin) {
+      const d = spotDistanceMiles(spot, origin);
+      if (d === null || d > filter.maxMiles) return false;
+    }
     if (filter.categories.length > 0) {
       const cats = new Set(spot.deals.map((d) => d.category));
       if (!filter.categories.some((c) => cats.has(c))) return false;

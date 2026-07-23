@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import type { DealFilter, Spot } from "@/lib/types";
+import type { Day, DealFilter, Spot } from "@/lib/types";
 import { EMPTY_FILTER } from "@/lib/types";
-import { applyFilter } from "@/lib/spots";
+import { applyFilter, spotDistanceMiles, type LatLng } from "@/lib/spots";
 import DealCard from "./DealCard";
 import FilterBar from "./FilterBar";
 import AskBar from "./AskBar";
@@ -38,18 +38,59 @@ const VIEWS: { id: View; label: string }[] = [
 export default function Browse({
   spots,
   neighborhoods,
+  today,
 }: {
   spots: Spot[];
   neighborhoods: string[];
+  /** Houston's current weekday — the default day filter ("today, not all days"). */
+  today: Day;
 }) {
   const [view, setView] = useState<View>("list");
-  const [filter, setFilter] = useState<DealFilter>(EMPTY_FILTER);
-  const filtered = useMemo(() => applyFilter(spots, filter), [spots, filter]);
+  const [filter, setFilter] = useState<DealFilter>({ ...EMPTY_FILTER, day: today });
+  const [origin, setOrigin] = useState<LatLng | null>(null);
+  const [geoNote, setGeoNote] = useState<string | null>(null);
+
+  /** Distance filtering needs the visitor's location — ask the browser the
+   * first time a "within X mi" option is picked. */
+  const changeFilter = (f: DealFilter) => {
+    setFilter(f);
+    if (f.maxMiles !== null && !origin) {
+      if (!("geolocation" in navigator)) {
+        setGeoNote("This browser can't share your location, so distance filtering is off.");
+        setFilter({ ...f, maxMiles: null });
+        return;
+      }
+      setGeoNote("Finding you…");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setGeoNote(null);
+        },
+        () => {
+          setGeoNote("Couldn't get your location — allow location access to filter by distance.");
+          setFilter((cur) => ({ ...cur, maxMiles: null }));
+        },
+        { maximumAge: 5 * 60 * 1000, timeout: 10 * 1000 },
+      );
+    }
+  };
+
+  const filtered = useMemo(() => {
+    const result = applyFilter(spots, filter, new Date(), origin);
+    if (filter.maxMiles !== null && origin) {
+      return [...result].sort(
+        (a, b) =>
+          (spotDistanceMiles(a, origin) ?? Infinity) - (spotDistanceMiles(b, origin) ?? Infinity),
+      );
+    }
+    return result;
+  }, [spots, filter, origin]);
 
   return (
     <div className="space-y-5">
-      <AskBar onFilter={setFilter} />
-      <FilterBar filter={filter} onChange={setFilter} neighborhoods={neighborhoods} />
+      <AskBar onFilter={changeFilter} />
+      <FilterBar filter={filter} onChange={changeFilter} neighborhoods={neighborhoods} today={today} />
+      {geoNote && <p className="text-xs text-muted">{geoNote}</p>}
 
       <div className="flex items-center justify-between gap-3">
         <div
@@ -80,7 +121,7 @@ export default function Browse({
         (filtered.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((spot) => (
-              <DealCard key={spot.id} spot={spot} />
+              <DealCard key={spot.id} spot={spot} distanceMi={spotDistanceMiles(spot, origin)} />
             ))}
           </div>
         ) : (

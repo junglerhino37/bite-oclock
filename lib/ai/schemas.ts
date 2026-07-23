@@ -38,6 +38,13 @@ export type Extraction = z.infer<typeof ExtractionSchema>;
  * extraction itself — validated server-side before persisting as *pending*. */
 export const SubmissionSchema = z.object({
   restaurant_name: z.string().min(1).max(120),
+  /** Set when the submission updates an existing spot (a new menu version). */
+  spot_slug: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .max(80)
+    .nullable()
+    .optional(),
   neighborhood: z.string().max(60).nullable(),
   days: z.array(dayEnum).max(7),
   start: hhmm,

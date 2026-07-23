@@ -5,13 +5,12 @@
 
 Houston's happy hour info is scattered, stale, and drink-centric. Bite o'Clock
 is a community-built directory of **food** happy hours: the $1 oysters, the $5
-queso, the half-price sushi. Snap a photo of a menu, AI reads it, a human
-approves it, and everyone eats better.
+queso, the half-price sushi. Snap a photo of a menu, AI reads it, it goes live
+instantly, and the community votes on whether it's still current.
 
-**Status: early days.** The browse experience (list / map / bubbles), AI menu
-extraction, and AI natural-language search work today. Persistence (Supabase),
-accounts, and the moderation dashboard are the next milestones — see the
-roadmap below.
+**Status: early days.** Browse (list / map / bubbles), AI menu extraction, AI
+natural-language search, instant photo submissions, and community verification
+(votes + hours edits + happy hour history) work today — see the roadmap below.
 
 ## Features
 
@@ -24,7 +23,12 @@ roadmap below.
 - 🤖 **Ask** — "cheap oysters near Montrose on a Tuesday" → the AI turns your
   question into a filter (never SQL) and shows real matching deals.
 - 📸 **Spot a deal** — upload a menu photo; Claude extracts the dishes, prices,
-  and hours for human review.
+  and hours; you fix anything it got wrong and it's live immediately.
+- ✅ **Community verification** — 👍 "still current" / 👎 "outdated" votes on
+  every deal and every spot's hours, with a "last verified" blurb. No
+  moderation queue.
+- 🕰 **Happy hour history** — each new menu snapshot or hours edit becomes the
+  current version; older versions fold into the restaurant page's history.
 
 ## Getting started
 
@@ -42,23 +46,27 @@ To enable real AI extraction and search, copy `.env.example` to `.env.local`
 and add your own `ANTHROPIC_API_KEY` (set a spend limit in the Anthropic
 console). **Never commit keys** — see [SECURITY.md](SECURITY.md).
 
-To enable **submission persistence + the moderation queue**:
+To enable **submission persistence + community verification**:
 1. Create a free [Supabase](https://supabase.com) project.
 2. Run the SQL in `supabase/migrations/` (SQL editor, in order) and create a
    public storage bucket named `uploads`.
-3. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
-   `MODERATOR_KEY` in your env (locally in `.env.local`; on Vercel in project
-   settings).
-4. Menu submissions now persist with their photo; review them at `/mod`
-   (enter the moderator key). Approved submissions appear in browse within
-   ~5 minutes (ISR).
+3. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in your env (locally in
+   `.env.local`; on Vercel in project settings).
+4. Menu submissions now persist with their photo and go live instantly;
+   anyone can vote deals/hours current or outdated.
+5. Optional — Google/Facebook sign-in for one-vote-per-person: set
+   `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` and enable the
+   providers in Supabase Auth settings. Without them, votes are keyed by IP.
 
 ## How the data stays trustworthy
 
 1. Every listing traces to a source — a menu photo or a published article
    (see `sourceUrl` in [data/seed.json](data/seed.json)).
-2. AI extraction output is *pending data for human review*, never auto-published.
-3. Deals show their source and age; stale deals get expired.
+2. AI extraction is reviewed and corrected by the submitter before publishing;
+   schema validation keeps it data, never instructions.
+3. The community verifies: every deal and every spot's hours carry
+   "still current" / "outdated" votes and a last-verified date, and hours can
+   be fixed in place (the old schedule stays in history).
 4. Deals change without notice — always confirm with the restaurant.
 
 ## Architecture (short version)
@@ -82,14 +90,14 @@ More detail: [PRODUCT-SPEC.md](PRODUCT-SPEC.md) · [DESIGN.md](DESIGN.md) ·
 - [x] AI menu extraction endpoint (Claude vision, structured output)
 - [x] AI natural-language search
 - [x] Supabase schema + RLS policies
-- [x] Wire Supabase: persist submissions (photo included) + `/mod` moderation
-      queue; approved submissions appear in browse via ISR
-- [ ] Auth (lightweight — enough to credit contributors and stop spam;
-      replaces the interim shared `MODERATOR_KEY`)
+- [x] Wire Supabase: persist submissions (photo included); instant publish
+- [x] Community verification: votes on deals + hours, last-verified badges,
+      editable hours, happy hour history (replaced the moderation queue)
+- [x] Auth: Google/Facebook sign-in via Supabase (one vote per account)
 - [ ] Image pipeline: signed uploads → sharp re-encode (EXIF/GPS strip) → variants
 - [ ] Real dish/menu photos on cards (today: category gradients)
 - [ ] Import Houston restaurant canon from Overture/Foursquare OS Places
-- [ ] Deal freshness: confirmations, auto-expiry, "last verified" badges
+- [ ] Auto-expiry for deals that keep getting "outdated" votes
 - [ ] Custom warm MapLibre style (Maputnik) to match the design system
 
 ## Contributing

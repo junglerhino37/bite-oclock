@@ -8,7 +8,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 export function getServiceDb(): SupabaseClient | null {
   const url = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) return null;
+  // Placeholder values (e.g. Vercel's "[SENSITIVE]" from `vercel env pull`)
+  // must degrade to demo mode, not crash createClient.
+  if (!url?.startsWith("http") || !serviceKey) return null;
   return createClient(url, serviceKey, { auth: { persistSession: false } });
 }
 

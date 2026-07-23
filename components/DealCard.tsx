@@ -5,14 +5,32 @@ import type { Spot } from "@/lib/types";
 import { DAY_LABELS } from "@/lib/types";
 import { CATEGORIES } from "@/lib/categories";
 import { formatTimeRange, isLiveNow } from "@/lib/spots";
+import { timeAgo } from "@/lib/format";
+
+/** Freshest "still current" vote across the spot's deals and hours. */
+function latestVerified(spot: Spot): string | null {
+  let latest: string | null = null;
+  for (const s of Object.values(spot.verification ?? {})) {
+    if (s.lastVerifiedAt && (!latest || s.lastVerifiedAt > latest)) latest = s.lastVerifiedAt;
+  }
+  return latest;
+}
 
 /** Photo-forward deal card. Until a spot has real dish photos, the header is a
  * warm two-tone gradient in its dominant category color with an oversized emoji
  * — never a gray placeholder (DESIGN.md). */
-export default function DealCard({ spot }: { spot: Spot }) {
+export default function DealCard({
+  spot,
+  distanceMi = null,
+}: {
+  spot: Spot;
+  /** Miles from the visitor, when their location is known. */
+  distanceMi?: number | null;
+}) {
   const dominant = spot.deals[0]?.category ?? "barfood";
   const meta = CATEGORIES[dominant];
   const live = isLiveNow(spot);
+  const verified = latestVerified(spot);
 
   return (
     <Link
@@ -44,8 +62,18 @@ export default function DealCard({ spot }: { spot: Spot }) {
       <div className="space-y-2 p-4">
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="font-display text-lg font-semibold leading-tight text-ink">{spot.name}</h3>
-          <span className="shrink-0 text-xs text-muted">{spot.neighborhood}</span>
+          <span className="shrink-0 text-xs text-muted">
+            {distanceMi !== null && (
+              <span className="font-data mr-1.5 text-ink/70">{distanceMi.toFixed(1)} mi</span>
+            )}
+            {spot.neighborhood}
+          </span>
         </div>
+        {verified && (
+          <p suppressHydrationWarning className="font-data text-[11px] text-success">
+            ✓ verified {timeAgo(verified)}
+          </p>
+        )}
         <ul className="flex flex-wrap gap-1.5">
           {spot.deals.slice(0, 4).map((deal, i) => (
             <li

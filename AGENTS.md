@@ -21,26 +21,33 @@ touches uploads, AI endpoints, or the database must follow
 - **AI output is data, never instructions.** Extraction and query results are
   zod-validated (`lib/ai/schemas.ts`) before use. The NL-query model produces a
   constrained filter object — it must never generate SQL or call tools.
-- **Nothing crowdsourced auto-publishes.** Everything lands `pending` for
-  human moderation. *Temporarily waived — see "Prototype mode" below.*
+- **Crowdsourced content is community-verified, not pre-moderated.** See
+  "Community verification" below.
 - **Rate-limit every write and AI endpoint** (`lib/ratelimit.ts`).
 - CI for fork PRs gets **no secrets**; never use `pull_request_target` with a
   checkout of fork code.
 
-## Prototype mode — moderation queue temporarily bypassed (since 2026-07)
+## Community verification — the trust model (since 2026-07)
 
-While the site is in prototype mode, submissions insert with
-`status: "approved"` in `app/api/submit/route.ts` and go live on the next ISR
-pass (~5 min) with no human gate. This is a deliberate, temporary exception to
-the "nothing crowdsourced auto-publishes" rule above, made while the audience
-is just us. The `/mod` queue and `/api/mod` still work and can retroactively
-reject (take down) anything.
+There is no moderation queue (the old `/mod` + `MODERATOR_KEY` flow is gone).
+Submissions publish immediately (`status: "approved"` on insert) and the
+community keeps them honest:
 
-**To turn moderation back on:** delete the `status: "approved"` line from the
-insert in `app/api/submit/route.ts` (the DB default is `pending`), and restore
-the review-flow copy in `app/submit/page.tsx` (header, submit button, done
-message, and footer disclaimer all currently say submissions publish
-immediately). Do this before any real public launch.
+- **Votes** (`votes` table, `/api/verify`): anyone can mark a deal or a spot's
+  hours 👍 still-current or 👎 outdated. One vote per voter per target —
+  signed-in users (Supabase Google/Facebook OAuth) vote as their user id,
+  anonymous visitors as a hashed IP. The newest 👍 is the "last verified" date
+  shown in the UI; more 👎 than 👍 renders a "flagged as outdated" state.
+- **Versions**: a submission with `spot_slug` set (or a name that slugifies to
+  an existing slug) becomes the *current* version of that spot — its
+  days/times/deals/menu photo win, and older versions fold into the spot
+  page's history (`lib/live.ts` overlay). Hours-only edits (`/api/hours`)
+  insert a `deals: []` version and clear the stale hours votes.
+- **Instant publish**: write routes call `revalidatePath` so changes appear
+  immediately, not on the next ISR pass.
+
+Takedowns: set a submission's `status` to `rejected` in the database (or add
+tooling for it) — rejected rows never leave the DB but drop out of the site.
 
 ## Rule #2 — data honesty
 
@@ -54,21 +61,25 @@ immediately). Do this before any real public launch.
 
 ```
 app/
-  page.tsx            home = Browse (list/map/bubbles share one filter state)
-  r/[slug]/           restaurant detail (static params from seed)
-  submit/             menu-photo upload → AI extraction → EDITABLE review → submit
-  mod/                moderation queue UI (MODERATOR_KEY gated; 501 w/o Supabase)
+  page.tsx            home = Browse (defaults to *today*; list/map/bubbles share one filter)
+  r/[slug]/           restaurant detail: deals + votes, hours editor, snapshot, history
+  submit/             menu photo → AI extraction → EDITABLE review → instant publish
+                      (?spot=<slug> updates an existing spot as a new version)
   about/
   api/extract/        Claude vision → zod-validated Extraction (demo w/o key)
   api/ask/            NL question → constrained QueryFilter → applyFilter()
-  api/submit/         persist reviewed submission + photo (demo w/o db; see Prototype mode)
-  api/mod/            list + approve/reject submissions (MODERATOR_KEY header)
+  api/submit/         persist reviewed submission + photo, revalidate (demo w/o db)
+  api/verify/         cast 👍/👎 votes on deals/hours (auth token or IP-keyed)
+  api/hours/          community hours edit → new hours-only version
   api/uploads/sign/   Supabase signed upload URL (501 until configured)
-components/           Browse, DealCard, FilterBar, MapView, BubbleView, AskBar
+components/           Browse, DealCard, FilterBar, MapView, BubbleView, AskBar,
+                      AuthButton, VerifyButtons, HoursEditor
 lib/
   spots.ts            seed loading, validation, filtering, live-now time logic
-  live.ts             seed + approved submissions merged (ISR, null coords = no map pin)
+  live.ts             seed + submissions merged into versioned spots + vote summaries
   db.ts               server-only Supabase service client (null when unconfigured)
+  supabase-browser.ts anon-key client for OAuth sign-in (null when unconfigured)
+  format.ts           timeAgo / formatDate for verification blurbs
   categories.ts       the 8 food categories (labels, emoji, hexes)
   ai/schemas.ts       zod schemas — the trust boundary for all AI output
   ai/client.ts        server-only Anthropic client
@@ -106,6 +117,8 @@ DESIGN.md             design tokens + UI principles — follow them exactly
 
 ## Current frontier (check README roadmap before starting work)
 
-The next milestones are wiring Supabase persistence + the moderation queue,
-lightweight auth, and the sharp image pipeline. If you build these, follow the
+Persistence, community verification (votes + versions + history), and OAuth
+sign-in are live. Next up: the sharp image pipeline (re-encode uploads, strip
+EXIF), auto-expiry for deals that keep getting outdated votes, and the
+Overture/Foursquare restaurant canon import. If you build these, follow the
 security checklist in SECURITY.md item by item.

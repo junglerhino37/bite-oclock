@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
+import AuthButton from "@/components/AuthButton";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               >
                 + Spot a deal
               </Link>
+              <AuthButton />
             </nav>
           </div>
         </header>
