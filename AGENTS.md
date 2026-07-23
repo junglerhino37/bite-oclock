@@ -22,10 +22,25 @@ touches uploads, AI endpoints, or the database must follow
   zod-validated (`lib/ai/schemas.ts`) before use. The NL-query model produces a
   constrained filter object — it must never generate SQL or call tools.
 - **Nothing crowdsourced auto-publishes.** Everything lands `pending` for
-  human moderation.
+  human moderation. *Temporarily waived — see "Prototype mode" below.*
 - **Rate-limit every write and AI endpoint** (`lib/ratelimit.ts`).
 - CI for fork PRs gets **no secrets**; never use `pull_request_target` with a
   checkout of fork code.
+
+## Prototype mode — moderation queue temporarily bypassed (since 2026-07)
+
+While the site is in prototype mode, submissions insert with
+`status: "approved"` in `app/api/submit/route.ts` and go live on the next ISR
+pass (~5 min) with no human gate. This is a deliberate, temporary exception to
+the "nothing crowdsourced auto-publishes" rule above, made while the audience
+is just us. The `/mod` queue and `/api/mod` still work and can retroactively
+reject (take down) anything.
+
+**To turn moderation back on:** delete the `status: "approved"` line from the
+insert in `app/api/submit/route.ts` (the DB default is `pending`), and restore
+the review-flow copy in `app/submit/page.tsx` (header, submit button, done
+message, and footer disclaimer all currently say submissions publish
+immediately). Do this before any real public launch.
 
 ## Rule #2 — data honesty
 
@@ -46,7 +61,7 @@ app/
   about/
   api/extract/        Claude vision → zod-validated Extraction (demo w/o key)
   api/ask/            NL question → constrained QueryFilter → applyFilter()
-  api/submit/         persist reviewed submission + photo as PENDING (demo w/o db)
+  api/submit/         persist reviewed submission + photo (demo w/o db; see Prototype mode)
   api/mod/            list + approve/reject submissions (MODERATOR_KEY header)
   api/uploads/sign/   Supabase signed upload URL (501 until configured)
 components/           Browse, DealCard, FilterBar, MapView, BubbleView, AskBar

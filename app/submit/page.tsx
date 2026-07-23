@@ -29,8 +29,9 @@ function draftFromExtraction(x: Extraction): Draft {
     restaurant: x.restaurant_candidates[0] ?? "",
     neighborhood: "",
     days: x.happy_hour_days as Day[],
-    start: x.start ?? "",
-    end: x.end ?? "",
+    // Menus often omit times; 3–6 PM is the Houston default, editable below.
+    start: x.start || "15:00",
+    end: x.end || "18:00",
     deals: x.deals.map((d) => ({
       item: d.item,
       price: d.price ?? "",
@@ -143,7 +144,7 @@ export default function SubmitPage() {
         <h1 className="font-display text-3xl font-semibold text-ink">Spot a deal</h1>
         <p className="mt-2 text-sm text-muted">
           Snap the happy hour menu, we&rsquo;ll read it — then you fix anything we got wrong.
-          Everything goes through a quick human review before it appears on the site.
+          Once you hit publish it goes straight onto the site.
         </p>
       </header>
 
@@ -334,7 +335,7 @@ export default function SubmitPage() {
               disabled={busy}
               className="flex-1 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-40"
             >
-              {busy ? "Submitting…" : "Submit for review"}
+              {busy ? "Publishing…" : "Publish it"}
             </button>
             <button
               onClick={() => {
@@ -358,14 +359,14 @@ export default function SubmitPage() {
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
             {stored ? (
               <>
-                Thanks for feeding Houston — your submission (photo included) is in the moderation
-                queue and goes live once a human approves it.
+                Thanks for feeding Houston — your submission (photo included) is live. Give the
+                site a few minutes to pick it up.
               </>
             ) : (
               <>
                 Thanks for feeding Houston. <em>This instance has no database configured, so the
                 submission wasn&rsquo;t stored — add Supabase credentials (see README) to enable
-                the real moderation queue.</em>
+                real persistence.</em>
               </>
             )}
           </p>
@@ -382,7 +383,7 @@ export default function SubmitPage() {
 
       <p className="text-xs text-muted">
         By submitting you confirm the photo is yours and shows a real, current menu. Location
-        metadata is stripped from uploads; submissions are moderated before publishing.
+        metadata is stripped from uploads; moderators may remove listings after the fact.
       </p>
     </div>
   );

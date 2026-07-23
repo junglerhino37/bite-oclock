@@ -26,8 +26,10 @@ function sniffImageType(buf: Buffer): { mime: string; ext: string } | null {
   return null;
 }
 
-/** Persist a human-reviewed submission (edited extraction + source photo) as
- * PENDING for moderation. Multipart: 'payload' = JSON, 'photo' = image (optional). */
+/** Persist a human-reviewed submission (edited extraction + source photo).
+ * Multipart: 'payload' = JSON, 'photo' = image (optional).
+ * PROTOTYPE MODE: submissions auto-approve and go live on the next ISR pass —
+ * see "Prototype mode" in AGENTS.md for how to turn moderation back on. */
 export async function POST(req: Request) {
   const key = clientKey(req);
   if (!rateLimit(`submit:${key}`, 10, 60 * 60 * 1000)) {
@@ -86,6 +88,7 @@ export async function POST(req: Request) {
       end_time: payload.end,
       deals: payload.deals,
       photo_path: photoPath,
+      status: "approved", // prototype mode: skip the moderation queue (AGENTS.md)
       submitter_ip_hash: createHash("sha256").update(key).digest("hex").slice(0, 16),
     })
     .select("id")
