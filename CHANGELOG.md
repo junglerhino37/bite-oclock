@@ -3,6 +3,11 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.1.1 — 2026-07-23
+
+- Fix: og:image scraping now falls back to Microlink for bot-protected
+  restaurant sites (Cloudflare 403s plain server fetches).
+
 ## 1.1.0 — 2026-07-23
 
 - **Happy-hour links** — "add a link to bar boheme <url>" in the Ask bar

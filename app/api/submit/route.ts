@@ -43,6 +43,23 @@ function cleanSourceUrl(raw: string): string | null {
   return s.length <= 500 ? s : null;
 }
 
+/** Fallback metadata fetcher for bot-protected sites (Cloudflare 403s plain
+ * server fetches). Microlink's free tier renders the page and returns its
+ * og:image; only the public restaurant URL is sent. */
+async function fetchViaMicrolink(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`, {
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const img = data?.data?.image?.url ?? null;
+    return typeof img === "string" && img.startsWith("http") && img.length <= 800 ? img : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Grab the page's og:image so the listing gets a food photo from the
  * restaurant's own site. Best-effort: any failure just means no image. */
 async function fetchOgImage(url: string): Promise<string | null> {
@@ -155,7 +172,9 @@ export async function POST(req: Request) {
     else photoPaths.push(path); // photos are nice-to-have; the submission still counts
   }
 
-  const imageUrl = sourceUrl ? await fetchOgImage(sourceUrl) : null;
+  const imageUrl = sourceUrl
+    ? ((await fetchOgImage(sourceUrl)) ?? (await fetchViaMicrolink(sourceUrl)))
+    : null;
 
   const slug = payload.spot_slug ?? slugifyName(payload.restaurant_name);
   const { data, error } = await db
