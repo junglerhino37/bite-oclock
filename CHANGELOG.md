@@ -1,0 +1,31 @@
+# Changelog
+
+The site shows the current version in the footer (from `package.json`).
+See AGENTS.md → "Versioning" for the bump rules.
+
+## 1.0.0 — 2026-07-23
+
+First real release: the site went from prototype to daily-usable.
+
+- **Community verification replaces the moderation queue** — 👍 still-current /
+  👎 outdated votes on every deal and every spot's hours, "last verified"
+  blurbs, and instant publishing (no `/mod`, no moderator key).
+- **Versioned listings** — new menu photos and hours edits update a spot in
+  place; older happy hours fold into a history section on the spot page,
+  with menu snapshots and dates.
+- **Multi-photo submissions** (up to 4, deals merged across photos) and a
+  submitter-note box for things the menu doesn't say.
+- **Ask bar "add" intent** — "add $1 oysters at julep" → did-you-mean
+  confirmation → published, into an existing listing or as a new one.
+- **Browse upgrades** — defaults to today, "Open now" chip, distance filter
+  (1/2/5/10 mi) with nearest-first sorting, latest-added sort, ✨ updated
+  badges, ✓ verified badges.
+- **Auth scaffolding** — Google/Facebook sign-in via Supabase OAuth for
+  one-vote-per-person (provider setup pending).
+- **Vercel Web Analytics** beacon + footer counters (visits, happy hours
+  added, contributors).
+
+## 0.1.0
+
+Prototype: seed-data browse (list/map/bubbles), AI menu extraction, AI
+natural-language search, submissions with a human moderation queue.

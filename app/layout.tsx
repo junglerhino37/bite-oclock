@@ -3,6 +3,8 @@ import { Fraunces, Inter, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import AuthButton from "@/components/AuthButton";
+import SiteStats from "@/components/SiteStats";
+import pkg from "@/package.json";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -48,17 +50,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="mx-auto max-w-6xl px-4 pb-24">{children}</main>
         <footer className="border-t border-line bg-sunken/60">
           <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              Made by Houstonians, for Houstonians. Deals are crowdsourced — always confirm with
-              the restaurant.
-            </p>
-            <p>
+            <div className="space-y-1.5">
+              <p>
+                Made by Houstonians, for Houstonians. Deals are crowdsourced — always confirm with
+                the restaurant.
+              </p>
+              <SiteStats />
+            </div>
+            <p className="shrink-0">
               <a
                 href="https://github.com/junglerhino37/bite-oclock"
                 className="underline decoration-line underline-offset-4 hover:text-ink"
               >
                 Contribute on GitHub
               </a>
+              <span className="font-data ml-3 text-xs">v{pkg.version}</span>
             </p>
           </div>
         </footer>

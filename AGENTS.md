@@ -89,6 +89,18 @@ supabase/migrations/  Postgres + PostGIS schema, RLS default-deny
 DESIGN.md             design tokens + UI principles — follow them exactly
 ```
 
+## Versioning — keep it current
+
+The site version lives in `package.json` (`version`) and renders in the
+footer (`app/layout.tsx`). **Every user-visible change must bump it and add a
+line to [CHANGELOG.md](CHANGELOG.md)** — semver-ish:
+
+- **patch** (1.0.x): fixes, copy tweaks, small polish
+- **minor** (1.x.0): new features (a new filter, a new flow)
+- **major** (x.0.0): redesigns or breaking changes to how the site works
+
+Current line: **1.x** (community-verification era, since 2026-07-23).
+
 ## Conventions
 
 - TypeScript strict; `npm run lint` and `npm run build` must pass before a PR.

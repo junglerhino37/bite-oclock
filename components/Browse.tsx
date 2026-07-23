@@ -75,16 +75,26 @@ export default function Browse({
     }
   };
 
+  const [sort, setSort] = useState<"az" | "new">("az");
+
   const filtered = useMemo(() => {
     const result = applyFilter(spots, filter, new Date(), origin);
+    // An active distance filter always sorts nearest-first.
     if (filter.maxMiles !== null && origin) {
       return [...result].sort(
         (a, b) =>
           (spotDistanceMiles(a, origin) ?? Infinity) - (spotDistanceMiles(b, origin) ?? Infinity),
       );
     }
+    if (sort === "new") {
+      // Community-updated spots newest first; untouched seed spots follow A–Z.
+      return [...result].sort(
+        (a, b) =>
+          (b.addedAt ?? "").localeCompare(a.addedAt ?? "") || a.name.localeCompare(b.name),
+      );
+    }
     return result;
-  }, [spots, filter, origin]);
+  }, [spots, filter, origin, sort]);
 
   return (
     <div className="space-y-5">
@@ -112,9 +122,20 @@ export default function Browse({
             </button>
           ))}
         </div>
-        <p className="font-data text-sm text-muted">
-          {filtered.length} spot{filtered.length === 1 ? "" : "s"}
-        </p>
+        <div className="flex items-center gap-3">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as "az" | "new")}
+            className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-ink"
+            aria-label="Sort spots"
+          >
+            <option value="az">A–Z</option>
+            <option value="new">🆕 Latest added</option>
+          </select>
+          <p className="font-data text-sm text-muted">
+            {filtered.length} spot{filtered.length === 1 ? "" : "s"}
+          </p>
+        </div>
       </div>
 
       {view === "list" &&
