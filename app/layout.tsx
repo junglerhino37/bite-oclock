@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import AuthButton from "@/components/AuthButton";
 import "./globals.css";
 
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </p>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );
