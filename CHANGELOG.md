@@ -3,6 +3,13 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.6.1 — 2026-07-23
+
+- Extraction also preserves calendar limits ("valid through 8/31",
+  "summer only") and per-deal time windows ("lunch only", "after 9pm")
+  by appending them to the deal's description — dates are never
+  silently dropped.
+
 ## 1.6.0 — 2026-07-23
 
 - **Per-deal days** — daily-specials boards ("Monday: $1 wings") finally fit
