@@ -136,6 +136,14 @@ export function spotDistanceMiles(spot: Spot, origin: LatLng | null): number | n
   return distanceMiles(origin, { lat: spot.lat, lng: spot.lng });
 }
 
+/** A deal the community has voted into the ground: more 👎 than 👍 with at
+ * least two downvotes. Stale deals dim on the spot page and drop off cards —
+ * votes can always bring them back. */
+export function isDealStale(spot: Spot, item: string): boolean {
+  const s = spot.verification?.[`deal:${item}`];
+  return !!s && s.down >= 2 && s.down > s.up;
+}
+
 /** Freshest "still current" vote across a spot's deals and hours. */
 export function latestVerifiedAt(spot: Spot): string | null {
   let latest: string | null = null;

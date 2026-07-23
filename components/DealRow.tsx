@@ -15,10 +15,13 @@ export default function DealRow({
   slug,
   deal,
   summary,
+  stale = false,
 }: {
   slug: string;
   deal: Deal;
   summary?: VoteSummary;
+  /** Voted outdated by the community — dimmed here, hidden from cards. */
+  stale?: boolean;
 }) {
   const router = useRouter();
   const meta = CATEGORIES[deal.category];
@@ -142,7 +145,17 @@ export default function DealRow({
   }
 
   return (
-    <li className="space-y-3 rounded-2xl border border-line bg-surface p-4 shadow-sm">
+    <li
+      className={`space-y-3 rounded-2xl border bg-surface p-4 shadow-sm ${
+        stale ? "border-danger/40 opacity-70" : "border-line"
+      }`}
+    >
+      {stale && (
+        <p className="text-[11px] font-medium text-danger">
+          ⚠️ Voted outdated — hidden from cards until someone confirms it&rsquo;s back (or ✏️
+          fixes it).
+        </p>
+      )}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           {deal.photoUrl ? (

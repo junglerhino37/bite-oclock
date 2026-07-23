@@ -3,6 +3,14 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.5.0 — 2026-07-23
+
+- **Outdated votes now have teeth.** A deal with more 👎 than 👍 (2+ downs)
+  dims on its spot page with a "voted outdated" notice, sinks below fresh
+  deals, and disappears from home-page cards. Votes (or an ✏️ edit) bring
+  it back — nothing is deleted.
+- PRODUCT-SPEC.md rewritten to match the community-verification reality.
+
 ## 1.4.0 — 2026-07-23
 
 - **Bubbles rebuilt around the clock.** Bubbles are now restaurants, not

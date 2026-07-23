@@ -20,11 +20,16 @@ AI menu extraction keeps it fresh with minimal moderator effort.
 2. **Filter**: by food type (oysters, tacos, sushi, wings, burgers…), time of day /
    day of week, neighborhood/location, price.
 3. **Ask**: natural-language AI query — "cheap oysters near Montrose on a Tuesday at 4pm."
-4. **Contribute**: snap a photo of a happy hour menu → upload → AI extracts the deals
-   (items, prices, times, days) and associates them with the restaurant → lands in a
-   moderation queue → published.
-5. **Show off**: upload photos of the actual dishes; photos are the visual heart of the site.
-6. **Trust**: deals show when they were last verified; stale deals get flagged/expired.
+4. **Contribute**: snap photos of a happy hour menu (up to 4) → AI extracts the deals
+   (items, prices, times, days) → you fix anything it got wrong → it publishes
+   instantly onto the matching restaurant (one listing per physical address;
+   near-name/address matches are confirmed on the review screen). The Ask bar
+   also accepts "add $1 oysters at julep" and links to happy-hour pages.
+5. **Show off**: dish photos attach to individual deals; menu snapshots and
+   restaurant-site preview images make the cards visual.
+6. **Trust**: the community votes every deal and every spot's hours 👍 still
+   current / 👎 outdated. Listings show last-verified dates; deals voted down
+   dim on the page and drop off cards; every change is a version with history.
 
 ## Views
 - **Map view**: interactive map of Houston, clustered markers, tap for deal card.
@@ -32,13 +37,15 @@ AI menu extraction keeps it fresh with minimal moderator effort.
 - **List/card view**: photo-forward cards, sortable.
 - **Restaurant page**: all deals, menu photos, dish photos, hours, map snippet.
 
-## Data model (first cut)
-- `restaurants`: name, address, lat/lng, neighborhood, hours, source (OSM/Overture/manual).
-- `deals`: restaurant_id, item name, food categories[], price, days[], start/end times,
-  source photo, status (pending/published/expired), verified_at.
-- `menu_photos`: uploaded menu images → AI extraction runs against these.
-- `dish_photos`: user photos of dishes, linked to deal/restaurant.
-- `submissions/moderation`: queue with status + reviewer actions.
+## Data model (as built)
+- `data/seed.json`: curated baseline listings with sources.
+- `submissions`: one row per community contribution — a *version* of a spot
+  (days/times/deals jsonb/photos/note/link). `spot_slug` ties versions to a
+  listing; the newest version wins, older ones render as history.
+- `votes`: (spot_slug, kind deal|hours, target, ±1, voter) — verification.
+- `site_stats`: visit counter for the footer.
+- Photos (menu snapshots, dish photos) live in Supabase storage; paths ride
+  in the submission/deal jsonb.
 
 ## AI back end
 - Vision extraction: menu photo → structured JSON (items, prices, times) via Claude API,
@@ -53,13 +60,15 @@ AI menu extraction keeps it fresh with minimal moderator effort.
 - All uploads validated (type, size), EXIF-stripped, content-moderated, stored
   in object storage (never in the repo / never executed).
 - Rate limiting on uploads and AI endpoints; AI cost caps.
-- Moderation queue before anything goes public; audit trail.
+- Community verification instead of pre-moderation: instant publish, votes
+  as the quality gate, versions as the audit trail, `rejected` status as
+  the takedown lever.
 - RLS / least-privilege DB access; contributors run against their own dev instance.
 - Prompt-injection hardening: menu photos are untrusted input — extraction output is
   data, never instructions; schema-validated before writing to DB.
 
 ## Non-goals (v1)
-- User accounts beyond lightweight auth for submissions.
+- User accounts beyond lightweight OAuth for one-vote-per-person.
 - Reservations, ordering, reviews/ratings wars.
 - Native mobile apps (mobile-web first).
 - Any city that is not Houston.

@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Spot } from "@/lib/types";
 import { DAY_LABELS } from "@/lib/types";
 import { CATEGORIES } from "@/lib/categories";
-import { formatTimeRange, isLiveNow, latestVerifiedAt } from "@/lib/spots";
+import { formatTimeRange, isDealStale, isLiveNow, latestVerifiedAt } from "@/lib/spots";
 import { timeAgo } from "@/lib/format";
 
 /** Photo-forward deal card. Until a spot has real dish photos, the header is a
@@ -22,6 +22,7 @@ export default function DealCard({
   const meta = CATEGORIES[dominant];
   const live = isLiveNow(spot);
   const verified = latestVerifiedAt(spot);
+  const freshDeals = spot.deals.filter((d) => !isDealStale(spot, d.item));
   // Real dish photos beat the og:image beat the category gradient.
   const headerImage = spot.deals.find((d) => d.photoUrl)?.photoUrl ?? spot.imageUrl ?? null;
   // Flash a badge for a day after a community update so a refreshed listing
@@ -91,7 +92,7 @@ export default function DealCard({
           </p>
         )}
         <ul className="flex flex-wrap gap-1.5">
-          {spot.deals.slice(0, 4).map((deal, i) => (
+          {freshDeals.slice(0, 4).map((deal, i) => (
             <li
               key={i}
               className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
@@ -108,9 +109,9 @@ export default function DealCard({
               )}
             </li>
           ))}
-          {spot.deals.length > 4 && (
+          {freshDeals.length > 4 && (
             <li className="rounded-full bg-sunken px-2.5 py-1 text-xs text-muted">
-              +{spot.deals.length - 4} more
+              +{freshDeals.length - 4} more
             </li>
           )}
         </ul>

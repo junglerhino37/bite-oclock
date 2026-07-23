@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getSpots, formatTimeRange } from "@/lib/spots";
+import { getSpots, formatTimeRange, isDealStale } from "@/lib/spots";
 import { getAllSpots, getAnySpot } from "@/lib/live";
 import { CATEGORIES } from "@/lib/categories";
 import { DAYS, DAY_LABELS, verificationKey } from "@/lib/types";
@@ -110,14 +110,20 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
           Tap ✏️ on any deal to fix its price, add a dish photo, or update it.
         </p>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-          {spot.deals.map((deal, i) => (
-            <DealRow
-              key={`${deal.item}-${i}`}
-              slug={spot.slug}
-              deal={deal}
-              summary={spot.verification?.[verificationKey("deal", deal.item)]}
-            />
-          ))}
+          {[...spot.deals]
+            .sort(
+              (a, b) =>
+                Number(isDealStale(spot, a.item)) - Number(isDealStale(spot, b.item)),
+            )
+            .map((deal, i) => (
+              <DealRow
+                key={`${deal.item}-${i}`}
+                slug={spot.slug}
+                deal={deal}
+                summary={spot.verification?.[verificationKey("deal", deal.item)]}
+                stale={isDealStale(spot, deal.item)}
+              />
+            ))}
         </ul>
       </section>
 

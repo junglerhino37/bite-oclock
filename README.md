@@ -97,7 +97,8 @@ More detail: [PRODUCT-SPEC.md](PRODUCT-SPEC.md) · [DESIGN.md](DESIGN.md) ·
 - [ ] Image pipeline: signed uploads → sharp re-encode (EXIF/GPS strip) → variants
 - [ ] Real dish/menu photos on cards (today: category gradients)
 - [ ] Import Houston restaurant canon from Overture/Foursquare OS Places
-- [ ] Auto-expiry for deals that keep getting "outdated" votes
+- [x] Auto-expiry for deals that keep getting "outdated" votes (dim + drop
+      off cards; votes or an edit revive them)
 - [ ] Custom warm MapLibre style (Maputnik) to match the design system
 
 ## Contributing
