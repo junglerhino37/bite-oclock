@@ -1,7 +1,12 @@
 import Browse from "@/components/Browse";
-import { getSpots, getNeighborhoods } from "@/lib/spots";
+import { getAllSpots } from "@/lib/live";
 
-export default function HomePage() {
+// Re-render every 5 min so approved community submissions show up without a deploy.
+export const revalidate = 300;
+
+export default async function HomePage() {
+  const spots = await getAllSpots();
+  const neighborhoods = [...new Set(spots.map((s) => s.neighborhood))].sort();
   return (
     <div className="space-y-8 pt-8">
       <section className="max-w-2xl">
@@ -13,7 +18,7 @@ export default function HomePage() {
           hour. Always confirm with the restaurant; kitchens change their minds.
         </p>
       </section>
-      <Browse spots={getSpots()} neighborhoods={getNeighborhoods()} />
+      <Browse spots={spots} neighborhoods={neighborhoods} />
     </div>
   );
 }

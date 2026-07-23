@@ -25,14 +25,16 @@ export default function MapView({ spots }: { spots: Spot[] }) {
         style={{ width: "100%", height: "100%" }}
         attributionControl={{ compact: true }}
       >
-        {spots.map((spot) => {
+        {spots
+          .filter((s) => s.lat !== null && s.lng !== null)
+          .map((spot) => {
           const meta = CATEGORIES[spot.deals[0]?.category ?? "barfood"];
           const live = isLiveNow(spot);
           return (
             <Marker
               key={spot.id}
-              longitude={spot.lng}
-              latitude={spot.lat}
+              longitude={spot.lng!}
+              latitude={spot.lat!}
               anchor="bottom"
               onClick={(e) => {
                 e.originalEvent.stopPropagation();
@@ -54,7 +56,7 @@ export default function MapView({ spots }: { spots: Spot[] }) {
             </Marker>
           );
         })}
-        {selected && (
+        {selected && selected.lng !== null && selected.lat !== null && (
           <Popup
             longitude={selected.lng}
             latitude={selected.lat}

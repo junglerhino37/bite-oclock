@@ -41,14 +41,19 @@ touches uploads, AI endpoints, or the database must follow
 app/
   page.tsx            home = Browse (list/map/bubbles share one filter state)
   r/[slug]/           restaurant detail (static params from seed)
-  submit/             menu-photo upload → AI extraction → review → (moderation)
+  submit/             menu-photo upload → AI extraction → EDITABLE review → submit
+  mod/                moderation queue UI (MODERATOR_KEY gated; 501 w/o Supabase)
   about/
   api/extract/        Claude vision → zod-validated Extraction (demo w/o key)
   api/ask/            NL question → constrained QueryFilter → applyFilter()
+  api/submit/         persist reviewed submission + photo as PENDING (demo w/o db)
+  api/mod/            list + approve/reject submissions (MODERATOR_KEY header)
   api/uploads/sign/   Supabase signed upload URL (501 until configured)
 components/           Browse, DealCard, FilterBar, MapView, BubbleView, AskBar
 lib/
   spots.ts            seed loading, validation, filtering, live-now time logic
+  live.ts             seed + approved submissions merged (ISR, null coords = no map pin)
+  db.ts               server-only Supabase service client (null when unconfigured)
   categories.ts       the 8 food categories (labels, emoji, hexes)
   ai/schemas.ts       zod schemas — the trust boundary for all AI output
   ai/client.ts        server-only Anthropic client

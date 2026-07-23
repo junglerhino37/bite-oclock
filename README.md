@@ -40,9 +40,18 @@ That's it — the site runs entirely from seed data with **no keys required**
 
 To enable real AI extraction and search, copy `.env.example` to `.env.local`
 and add your own `ANTHROPIC_API_KEY` (set a spend limit in the Anthropic
-console). To work on uploads/persistence, add your own free-tier Supabase
-project (schema in `supabase/migrations/`). **Never commit keys** — see
-[SECURITY.md](SECURITY.md).
+console). **Never commit keys** — see [SECURITY.md](SECURITY.md).
+
+To enable **submission persistence + the moderation queue**:
+1. Create a free [Supabase](https://supabase.com) project.
+2. Run the SQL in `supabase/migrations/` (SQL editor, in order) and create a
+   public storage bucket named `uploads`.
+3. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a long random
+   `MODERATOR_KEY` in your env (locally in `.env.local`; on Vercel in project
+   settings).
+4. Menu submissions now persist with their photo; review them at `/mod`
+   (enter the moderator key). Approved submissions appear in browse within
+   ~5 minutes (ISR).
 
 ## How the data stays trustworthy
 
@@ -73,8 +82,10 @@ More detail: [PRODUCT-SPEC.md](PRODUCT-SPEC.md) · [DESIGN.md](DESIGN.md) ·
 - [x] AI menu extraction endpoint (Claude vision, structured output)
 - [x] AI natural-language search
 - [x] Supabase schema + RLS policies
-- [ ] Wire Supabase: persist submissions, moderation queue UI
-- [ ] Auth (lightweight — enough to credit contributors and stop spam)
+- [x] Wire Supabase: persist submissions (photo included) + `/mod` moderation
+      queue; approved submissions appear in browse via ISR
+- [ ] Auth (lightweight — enough to credit contributors and stop spam;
+      replaces the interim shared `MODERATOR_KEY`)
 - [ ] Image pipeline: signed uploads → sharp re-encode (EXIF/GPS strip) → variants
 - [ ] Real dish/menu photos on cards (today: category gradients)
 - [ ] Import Houston restaurant canon from Overture/Foursquare OS Places

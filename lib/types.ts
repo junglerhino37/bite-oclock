@@ -19,6 +19,8 @@ export interface Deal {
   /** Display price, e.g. "$1 each" or "$5" — null when the source didn't state one. */
   price: string | null;
   category: Category;
+  /** Menu sub-text under the dish (ingredients/preparation), when present. */
+  description?: string | null;
 }
 
 export interface Spot {
@@ -26,8 +28,10 @@ export interface Spot {
   slug: string;
   name: string;
   address: string;
-  lat: number;
-  lng: number;
+  /** Null for community submissions that haven't been geocoded yet —
+   * such spots appear in list/bubble views but not on the map. */
+  lat: number | null;
+  lng: number | null;
   neighborhood: string;
   days: Day[];
   /** 24h "HH:MM" in America/Chicago, null when unknown. */

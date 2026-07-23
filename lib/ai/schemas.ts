@@ -25,12 +25,36 @@ export const ExtractionSchema = z.object({
         item: z.string().max(120),
         price: z.string().max(24).nullable(),
         category: categoryEnum,
+        description: z.string().max(240).nullable().catch(null),
       }),
     )
     .max(40),
   confidence: z.number().min(0).max(1),
 });
 export type Extraction = z.infer<typeof ExtractionSchema>;
+
+/** A user-reviewed submission: the extraction after human edits on the review
+ * screen, plus the restaurant name they settled on. Same trust boundary as the
+ * extraction itself — validated server-side before persisting as *pending*. */
+export const SubmissionSchema = z.object({
+  restaurant_name: z.string().min(1).max(120),
+  neighborhood: z.string().max(60).nullable(),
+  days: z.array(dayEnum).max(7),
+  start: hhmm,
+  end: hhmm,
+  deals: z
+    .array(
+      z.object({
+        item: z.string().min(1).max(120),
+        price: z.string().max(24).nullable(),
+        category: categoryEnum,
+        description: z.string().max(240).nullable(),
+      }),
+    )
+    .min(1)
+    .max(40),
+});
+export type Submission = z.infer<typeof SubmissionSchema>;
 
 /** The ONLY thing the NL-query model may produce: a constrained filter object.
  * The model never writes SQL and never touches data directly — injection in a

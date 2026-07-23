@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getSpot, getSpots, formatTimeRange } from "@/lib/spots";
+import { getSpots, formatTimeRange } from "@/lib/spots";
+import { getAnySpot } from "@/lib/live";
 import { CATEGORIES } from "@/lib/categories";
 import { DAYS, DAY_LABELS } from "@/lib/types";
 import LiveNow from "./live";
+
+// Seed spots are prebuilt; approved community submissions render on demand (ISR).
+export const revalidate = 300;
 
 export function generateStaticParams() {
   return getSpots().map((s) => ({ slug: s.slug }));
@@ -15,12 +19,12 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const spot = getSpot((await params).slug);
+  const spot = await getAnySpot((await params).slug);
   return { title: spot ? `${spot.name} — Bite o'Clock` : "Not found — Bite o'Clock" };
 }
 
 export default async function SpotPage({ params }: { params: Promise<{ slug: string }> }) {
-  const spot = getSpot((await params).slug);
+  const spot = await getAnySpot((await params).slug);
   if (!spot) notFound();
   const dominant = CATEGORIES[spot.deals[0]?.category ?? "barfood"];
 
@@ -72,6 +76,9 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
                   </span>
                   <div>
                     <p className="font-medium text-ink">{deal.item}</p>
+                    {deal.description && (
+                      <p className="text-xs italic text-muted">{deal.description}</p>
+                    )}
                     <p className="text-xs text-muted">{meta.label}</p>
                   </div>
                 </div>

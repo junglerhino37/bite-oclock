@@ -40,6 +40,7 @@ export function getSpots(): Spot[] {
                 item: deal.item,
                 price: typeof deal.price === "string" ? deal.price : null,
                 category: String(deal.category),
+                description: typeof deal.description === "string" ? deal.description : null,
               },
             ];
           })
