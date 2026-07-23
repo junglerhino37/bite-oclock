@@ -97,13 +97,21 @@ function toMinutes(hhmm: string): number {
 }
 
 export function isLiveNow(spot: Spot, now: Date = new Date()): boolean {
-  if (!spot.start || !spot.end) return false;
+  if (!spot.start) return false;
   const { day, minutes } = houstonNow(now);
   if (!spot.days.includes(day)) return false;
-  return minutes >= toMinutes(spot.start) && minutes < toMinutes(spot.end);
+  // Open-ended windows ("specials after 4 PM") run until close of day.
+  const end = spot.end ? toMinutes(spot.end) : 24 * 60;
+  return minutes >= toMinutes(spot.start) && minutes < end;
 }
 
 export function formatTimeRange(spot: { start: string | null; end: string | null }): string {
+  if (spot.start && !spot.end) {
+    const [h, m] = spot.start.split(":").map(Number);
+    const suffix = h >= 12 ? "PM" : "AM";
+    const hour12 = h % 12 === 0 ? 12 : h % 12;
+    return `after ${m === 0 ? `${hour12} ${suffix}` : `${hour12}:${String(m).padStart(2, "0")} ${suffix}`}`;
+  }
   if (!spot.start || !spot.end) return "hours vary";
   const fmt = (hhmm: string) => {
     const [h, m] = hhmm.split(":").map(Number);
@@ -181,8 +189,15 @@ export function applyFilter(
     }
     if (filter.neighborhood && spot.neighborhood !== filter.neighborhood) return false;
     // Spots with no listed days are "days unknown", not "never" — day filters
-    // keep them visible so a fresh community listing doesn't vanish.
-    if (filter.day && spot.days.length > 0 && !spot.days.includes(filter.day)) return false;
+    // keep them visible so a fresh community listing doesn't vanish. A spot
+    // also matches a day if any individual deal runs that day.
+    if (
+      filter.day &&
+      spot.days.length > 0 &&
+      !spot.days.includes(filter.day) &&
+      !spot.deals.some((d) => d.days?.includes(filter.day as Day))
+    )
+      return false;
     if (filter.liveNow && !isLiveNow(spot, now)) return false;
     if (filter.foodTerms.length > 0) {
       const haystack = [spot.name, ...spot.deals.map((d) => d.item)].join(" ").toLowerCase();

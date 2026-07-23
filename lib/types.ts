@@ -21,6 +21,9 @@ export interface Deal {
   category: Category;
   /** Menu sub-text under the dish (ingredients/preparation), when present. */
   description?: string | null;
+  /** Days this specific deal runs, when the menu says so ("Monday: $1 wings").
+   * Empty/absent = every day the spot's happy hour runs. */
+  days?: Day[];
   /** Community dish photo — storage path (persisted) and public URL (display). */
   photoPath?: string | null;
   photoUrl?: string | null;

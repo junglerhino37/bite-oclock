@@ -156,6 +156,7 @@ export default function AskBar({
               price: d.price,
               category: d.category,
               description: d.description ?? null,
+              days: d.days ?? [],
               photo_path: d.photoPath ?? null,
             })),
           ...newDeal,

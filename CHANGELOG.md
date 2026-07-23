@@ -3,6 +3,23 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.6.0 — 2026-07-23
+
+- **Per-deal days** — daily-specials boards ("Monday: $1 wings") finally fit
+  the model. Deals carry their own days: pickable on the review screen and
+  the deal editor, badged on spot pages and cards, honored by the day
+  filter and the bubbles.
+- **BBQ & Smoked category** (🍖).
+- **Specific or nothing** — extraction rules tightened: every deal must name
+  the actual item; prices carry the deal mechanic ("Buy 2 get 1 free",
+  "Free with any order"); no more nameless "$5-7" fragments.
+- **Open-ended windows** — "specials after 4 PM" keeps a null end: shows as
+  "after 4 PM", counts as live until close of day.
+- **Auto-address for new spots** — server geocodes the restaurant (menu
+  address → typed address → name lookup via Nominatim, Houston-bounded), so
+  community listings get a real address, map pin, and distance
+  (migration 0007: submissions.address/lat/lng).
+
 ## 1.5.0 — 2026-07-23
 
 - **Outdated votes now have teeth.** A deal with more 👎 than 👍 (2+ downs)

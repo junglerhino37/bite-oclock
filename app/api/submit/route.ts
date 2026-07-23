@@ -61,6 +61,48 @@ async function fetchViaMicrolink(url: string): Promise<string | null> {
   }
 }
 
+/** Find a new spot's address + coordinates via OpenStreetMap's Nominatim
+ * (one request per submission, identified UA, per their usage policy).
+ * Results outside greater Houston are discarded — a wrong pin is worse than
+ * no pin. Best-effort: failure just means no address yet. */
+async function geocodeQuery(
+  query: string,
+): Promise<{ address: string; lat: number; lng: number } | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=0&q=${encodeURIComponent(query)}`,
+      {
+        signal: AbortSignal.timeout(6000),
+        headers: { "user-agent": "bite-oclock/1.0 (Houston happy hour directory)" },
+      },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as { lat: string; lon: string; display_name: string }[];
+    const hit = data[0];
+    if (!hit) return null;
+    const lat = parseFloat(hit.lat);
+    const lng = parseFloat(hit.lon);
+    // Greater Houston bounding box — a wrong pin is worse than no pin.
+    if (!(lat > 29.2 && lat < 30.4 && lng > -96.2 && lng < -94.6)) return null;
+    const address = hit.display_name.split(",").slice(0, 3).join(",").trim().slice(0, 160);
+    return { address, lat, lng };
+  } catch {
+    return null;
+  }
+}
+
+async function geocode(
+  name: string,
+  addressHint: string | null,
+): Promise<{ address: string; lat: number; lng: number } | null> {
+  if (addressHint) {
+    const q = /houston|,\s*tx/i.test(addressHint) ? addressHint : `${addressHint}, Houston, TX`;
+    const byAddress = await geocodeQuery(q);
+    if (byAddress) return byAddress;
+  }
+  return geocodeQuery(`${name}, Houston, TX`);
+}
+
 /** Grab the page's og:image so the listing gets a food photo from the
  * restaurant's own site. Best-effort: any failure just means no image. */
 async function fetchOgImage(url: string): Promise<string | null> {
@@ -186,6 +228,11 @@ export async function POST(req: Request) {
     if (match) spotSlug = match.slug;
   }
 
+  // Brand-new spots get looked up so they arrive with an address + map pin.
+  const geo = spotSlug
+    ? null
+    : await geocode(payload.restaurant_name, payload.address ?? null);
+
   const slug = spotSlug ?? slugifyName(payload.restaurant_name);
   const { data, error } = await db
     .from("submissions")
@@ -203,6 +250,7 @@ export async function POST(req: Request) {
       ...(spotSlug ? { spot_slug: spotSlug } : {}),
       ...(sourceUrl ? { source_url: sourceUrl } : {}),
       ...(imageUrl ? { image_url: imageUrl } : {}),
+      ...(geo ? { address: geo.address, lat: geo.lat, lng: geo.lng } : {}),
       status: "approved", // publishes immediately; votes are the quality gate
       submitter_ip_hash: createHash("sha256").update(key).digest("hex").slice(0, 16),
     })

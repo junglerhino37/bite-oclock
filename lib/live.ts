@@ -32,6 +32,9 @@ interface SubRow {
   spot_slug?: string | null;
   source_url?: string | null;
   image_url?: string | null;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
   created_at: string;
 }
 
@@ -39,12 +42,16 @@ function parseDeals(raw: unknown, urlFor?: (path: string) => string | null): Dea
   return (Array.isArray(raw) ? raw : []).flatMap((d: Record<string, unknown>) => {
     if (typeof d.item !== "string" || !isCategory(String(d.category))) return [];
     const photoPath = typeof d.photo_path === "string" ? d.photo_path : null;
+    const days = (Array.isArray(d.days) ? d.days : []).filter((x): x is Day =>
+      DAYS.includes(x as Day),
+    );
     return [
       {
         item: d.item,
         price: typeof d.price === "string" ? d.price : null,
         category: String(d.category) as Deal["category"],
         description: typeof d.description === "string" ? d.description : null,
+        days: days.length > 0 ? days : undefined,
         photoPath,
         photoUrl: photoPath && urlFor ? urlFor(photoPath) : null,
       },
@@ -94,7 +101,7 @@ export async function getAllSpots(): Promise<Spot[]> {
   const db = getServiceDb();
   if (!db) return seed;
 
-  const newCols = ", photo_paths, note, spot_slug, source_url, image_url";
+  const newCols = ", photo_paths, note, spot_slug, source_url, image_url, address, lat, lng";
   const subCols = `id, restaurant_name, neighborhood, days, start_time, end_time, deals, photo_path${newCols}, created_at`;
   const fetchSubs = (cols: string) =>
     db
@@ -184,6 +191,10 @@ export async function getAllSpots(): Promise<Spot[]> {
       [...versions].reverse().find((v) => v.photoUrls.length > 0)?.photoUrls ?? [];
     const latestUrl = [...rows].reverse().find((r) => r.source_url)?.source_url ?? null;
     const latestImage = [...rows].reverse().find((r) => r.image_url)?.image_url ?? null;
+    const geocoded = [...rows]
+      .reverse()
+      .find((r) => typeof r.lat === "number" && typeof r.lng === "number");
+    const latestAddress = [...rows].reverse().find((r) => r.address)?.address ?? null;
     const latestSub = rows[rows.length - 1];
     const neighborhood =
       base?.neighborhood ??
@@ -193,9 +204,9 @@ export async function getAllSpots(): Promise<Spot[]> {
       id: base?.id ?? `sub-${latestSub?.id ?? slug}`,
       slug,
       name: base?.name ?? rows[0].restaurant_name,
-      address: base?.address ?? "",
-      lat: base?.lat ?? null, // community spots aren't geocoded — no map pin
-      lng: base?.lng ?? null,
+      address: base?.address || latestAddress || "",
+      lat: base?.lat ?? geocoded?.lat ?? null,
+      lng: base?.lng ?? geocoded?.lng ?? null,
       neighborhood,
       days: current.days,
       start: current.start,

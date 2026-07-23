@@ -2,6 +2,7 @@ export type Category =
   | "texmex"
   | "seafood"
   | "barfood"
+  | "bbq"
   | "sushi"
   | "vietcajun"
   | "pizza"
@@ -17,6 +18,7 @@ export const CATEGORIES: Record<
   texmex: { label: "Tacos & Tex-Mex", emoji: "🌮", color: "#d95d39" },
   seafood: { label: "Oysters & Seafood", emoji: "🦪", color: "#2e7e8c" },
   barfood: { label: "Wings & Bar Food", emoji: "🍗", color: "#b4452f" },
+  bbq: { label: "BBQ & Smoked", emoji: "🍖", color: "#8a4a26" },
   sushi: { label: "Sushi", emoji: "🍣", color: "#3e5f8a" },
   vietcajun: { label: "Viet-Cajun", emoji: "🦞", color: "#6b8e23" },
   pizza: { label: "Pizza", emoji: "🍕", color: "#c99a2e" },

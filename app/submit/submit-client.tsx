@@ -20,6 +20,8 @@ interface EditableDeal {
   price: string;
   category: Category;
   description: string;
+  /** Only these days ("Monday: $1 wings") — empty = every listed day. */
+  days: Day[];
 }
 
 interface Draft {
@@ -55,13 +57,15 @@ function draftFromExtractions(extractions: Extraction[], targetName?: string): D
     neighborhood: "",
     days: (withDays?.happy_hour_days ?? []) as Day[],
     // Menus often omit times; 3–6 PM is the Houston default, editable below.
+    // "Specials after 4 PM" keeps its open end — don't invent a closing time.
     start: withTimes?.start || "15:00",
-    end: withTimes?.end || "18:00",
+    end: withTimes?.start && !withTimes.end ? "" : withTimes?.end || "18:00",
     deals: deals.map((d) => ({
       item: d.item,
       price: d.price ?? "",
       category: d.category as Category,
       description: d.description ?? "",
+      days: ((d as { days?: string[] }).days ?? []) as Day[],
     })),
     note: "",
   };
@@ -184,7 +188,9 @@ export default function SubmitClient({
             price: d.price.trim() || null,
             category: d.category,
             description: d.description.trim() || null,
+            ...(d.days.length > 0 ? { days: d.days } : {}),
           })),
+          address: extractedAddress,
         }),
       );
       for (const p of photos) form.append("photos", p);
@@ -307,6 +313,17 @@ export default function SubmitClient({
                   className={`${inputCls} mt-1`}
                 />
               </label>
+              {!target && (
+                <label className="block text-xs font-medium uppercase tracking-wide text-muted">
+                  Address <span className="normal-case">(optional — puts it on the map)</span>
+                  <input
+                    value={extractedAddress ?? ""}
+                    onChange={(e) => setExtractedAddress(e.target.value || null)}
+                    placeholder="1201 St Emanuel St"
+                    className={`${inputCls} mt-1`}
+                  />
+                </label>
+              )}
             </div>
           </div>
 
@@ -406,17 +423,42 @@ export default function SubmitClient({
                   placeholder="Description on the menu (optional)"
                   className={inputCls}
                 />
-                <select
-                  value={deal.category}
-                  onChange={(e) => setDeal(i, { category: e.target.value as Category })}
-                  className="rounded-xl border border-line bg-surface px-2 py-1.5 text-sm text-ink"
-                >
-                  {CATEGORY_KEYS.map((c) => (
-                    <option key={c} value={c}>
-                      {CATEGORIES[c].emoji} {CATEGORIES[c].label}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={deal.category}
+                    onChange={(e) => setDeal(i, { category: e.target.value as Category })}
+                    className="rounded-xl border border-line bg-surface px-2 py-1.5 text-sm text-ink"
+                  >
+                    {CATEGORY_KEYS.map((c) => (
+                      <option key={c} value={c}>
+                        {CATEGORIES[c].emoji} {CATEGORIES[c].label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-[11px] text-muted">only on:</span>
+                  <span className="flex gap-1">
+                    {DAYS.map((d) => {
+                      const on = deal.days.includes(d);
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() =>
+                            setDeal(i, {
+                              days: on ? deal.days.filter((x) => x !== d) : [...deal.days, d],
+                            })
+                          }
+                          title={on ? `${DAY_LABELS[d]} only` : `Limit to ${DAY_LABELS[d]}`}
+                          className={`font-data rounded-full px-1.5 py-0.5 text-[11px] ${
+                            on ? "bg-secondary text-white" : "bg-sunken text-muted hover:text-ink"
+                          }`}
+                        >
+                          {DAY_LABELS[d][0]}
+                        </button>
+                      );
+                    })}
+                  </span>
+                </div>
               </div>
             ))}
             <button
@@ -426,7 +468,7 @@ export default function SubmitClient({
                   ...draft,
                   deals: [
                     ...draft.deals,
-                    { item: "", price: "", category: "barfood", description: "" },
+                    { item: "", price: "", category: "barfood", description: "", days: [] },
                   ],
                 })
               }

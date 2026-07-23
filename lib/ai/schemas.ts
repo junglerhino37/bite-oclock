@@ -26,9 +26,11 @@ export const ExtractionSchema = z.object({
     .array(
       z.object({
         item: z.string().max(120),
-        price: z.string().max(24).nullable(),
+        price: z.string().max(40).nullable(),
         category: categoryEnum,
         description: z.string().max(240).nullable().catch(null),
+        /** Days this specific deal runs, for daily-special boards. */
+        days: z.array(dayEnum).max(7).catch([]),
       }),
     )
     .max(40),
@@ -54,6 +56,8 @@ export const SubmissionSchema = z.object({
   /** Link to the restaurant's happy-hour/menu page. Cleaned + verified
    * server-side before storage. */
   source_url: z.string().url().max(500).nullable().optional(),
+  /** Address hint (extracted from the menu) — used to geocode new spots. */
+  address: z.string().max(160).nullable().optional(),
   neighborhood: z.string().max(60).nullable(),
   days: z.array(dayEnum).max(7),
   start: hhmm,
@@ -62,9 +66,10 @@ export const SubmissionSchema = z.object({
     .array(
       z.object({
         item: z.string().min(1).max(120),
-        price: z.string().max(24).nullable(),
+        price: z.string().max(40).nullable(),
         category: categoryEnum,
         description: z.string().max(240).nullable(),
+        days: z.array(dayEnum).max(7).optional(),
         /** Storage path of a community dish photo, carried across versions. */
         photo_path: z.string().max(300).nullable().optional(),
       }),

@@ -38,7 +38,7 @@ happy-hour window and Houston's sunset heat.
   /* category hues */
   --cat-texmex: #D95D39; --cat-seafood: #2E7E8C; --cat-barfood: #B4452F;
   --cat-sushi: #3E5F8A;  --cat-vietcajun: #6B8E23; --cat-pizza: #C99A2E;
-  --cat-burgers: #8C5A32; --cat-veg: #4C8C57;
+  --cat-burgers: #8C5A32; --cat-veg: #4C8C57; --cat-bbq: #8A4A26;
 
   /* type */
   --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;

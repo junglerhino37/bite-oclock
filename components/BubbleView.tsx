@@ -59,15 +59,18 @@ function fmtTime(hhmm: string): string {
 
 function statusOf(spot: Spot, now: Date): { status: Status; timeLabel: string; frac: number } {
   const { day, minutes } = houstonNow(now);
-  if (!spot.days.includes(day)) return { status: "off", timeLabel: "not today", frac: 0 };
-  if (!spot.start || !spot.end) return { status: "unknown", timeLabel: "hours vary", frac: 0 };
+  const dealToday = spot.deals.some((d) => d.days?.includes(day));
+  if (!spot.days.includes(day) && !dealToday)
+    return { status: "off", timeLabel: "not today", frac: 0 };
+  if (!spot.start) return { status: "unknown", timeLabel: "hours vary", frac: 0 };
   const s = toMin(spot.start);
-  const e = toMin(spot.end);
+  // Open-ended windows ("after 4 PM") run until close of day.
+  const e = spot.end ? toMin(spot.end) : 24 * 60;
   if (minutes < s) return { status: "soon", timeLabel: `starts ${fmtTime(spot.start)}`, frac: 0 };
   if (minutes >= e) return { status: "done", timeLabel: "done today", frac: 0 };
   return {
     status: "live",
-    timeLabel: `ends ${fmtTime(spot.end)}`,
+    timeLabel: spot.end ? `ends ${fmtTime(spot.end)}` : `since ${fmtTime(spot.start)}`,
     frac: Math.max(0.04, (e - minutes) / Math.max(1, e - s)),
   };
 }

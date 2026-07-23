@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Deal, VoteSummary } from "@/lib/types";
+import type { Day, Deal, VoteSummary } from "@/lib/types";
+import { DAYS, DAY_LABELS } from "@/lib/types";
 import { CATEGORIES, CATEGORY_KEYS, type Category } from "@/lib/categories";
 import VerifyButtons from "./VerifyButtons";
 
@@ -30,6 +31,7 @@ export default function DealRow({
   const [price, setPrice] = useState(deal.price ?? "");
   const [description, setDescription] = useState(deal.description ?? "");
   const [category, setCategory] = useState<Category>(deal.category);
+  const [days, setDays] = useState<Day[]>(deal.days ?? []);
   const [photo, setPhoto] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export default function DealRow({
           price: price.trim() || null,
           category,
           description: description.trim() || null,
+          days,
         }),
       );
       if (photo) form.append("photo", photo);
@@ -102,6 +105,25 @@ export default function DealRow({
               </option>
             ))}
           </select>
+          <span className="flex items-center gap-1">
+            <span className="text-[11px] text-muted">only on:</span>
+            {DAYS.map((d) => {
+              const on = days.includes(d);
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDays(on ? days.filter((x) => x !== d) : [...days, d])}
+                  title={on ? `${DAY_LABELS[d]} only` : `Limit to ${DAY_LABELS[d]}`}
+                  className={`font-data rounded-full px-1.5 py-0.5 text-[11px] ${
+                    on ? "bg-secondary text-white" : "bg-sunken text-muted hover:text-ink"
+                  }`}
+                >
+                  {DAY_LABELS[d][0]}
+                </button>
+              );
+            })}
+          </span>
           <label className="cursor-pointer rounded-xl border border-dashed border-line px-3 py-1.5 text-sm text-muted hover:border-primary hover:text-ink">
             {photo ? `📷 ${photo.name.slice(0, 18)}` : deal.photoUrl ? "📷 Replace photo" : "📷 Add a dish photo"}
             <input
@@ -174,7 +196,14 @@ export default function DealRow({
             </span>
           )}
           <div>
-            <p className="font-medium text-ink">{deal.item}</p>
+            <p className="font-medium text-ink">
+              {deal.item}
+              {deal.days && deal.days.length > 0 && (
+                <span className="font-data ml-1.5 rounded-full bg-secondary/15 px-1.5 py-0.5 text-[10px] font-semibold text-secondary">
+                  {deal.days.map((d) => DAY_LABELS[d]).join(" · ")} only
+                </span>
+              )}
+            </p>
             {deal.description && <p className="text-xs italic text-muted">{deal.description}</p>}
             <p className="text-xs text-muted">{meta.label}</p>
           </div>

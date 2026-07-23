@@ -5,6 +5,7 @@ import { getServiceDb, UPLOADS_BUCKET } from "@/lib/db";
 import { getAnySpot } from "@/lib/live";
 import { rateLimit, clientKey } from "@/lib/ratelimit";
 import { CATEGORY_KEYS } from "@/lib/categories";
+import { DAYS } from "@/lib/types";
 import type { Deal } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -21,9 +22,10 @@ const PatchSchema = z.object({
   originalItem: z.string().min(1).max(120),
   action: z.enum(["edit", "remove"]),
   item: z.string().min(1).max(120).optional(),
-  price: z.string().max(24).nullable().optional(),
+  price: z.string().max(40).nullable().optional(),
   category: z.enum(CATEGORY_KEYS as [string, ...string[]]).optional(),
   description: z.string().max(240).nullable().optional(),
+  days: z.array(z.enum(DAYS as [string, ...string[]])).max(7).optional(),
 });
 
 function sniffImageType(buf: Buffer): { mime: string; ext: string } | null {
@@ -111,6 +113,7 @@ export async function POST(req: Request) {
           price: d.price,
           category: d.category,
           description: d.description ?? null,
+          days: d.days ?? [],
           photo_path: d.photoPath ?? null,
         };
       if (patch.action === "remove") return null;
@@ -119,6 +122,7 @@ export async function POST(req: Request) {
         price: patch.price !== undefined ? patch.price : d.price,
         category: (patch.category as Deal["category"] | undefined) ?? d.category,
         description: patch.description !== undefined ? patch.description : (d.description ?? null),
+        days: patch.days ?? d.days ?? [],
         photo_path: photoPath ?? d.photoPath ?? null,
       };
     })

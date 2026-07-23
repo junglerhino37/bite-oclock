@@ -101,7 +101,16 @@ export default function DealCard({
                 color: "var(--text)",
               }}
             >
-              <span>{deal.item}</span>
+              <span>
+                {deal.days && deal.days.length > 0 && (
+                  <span className="font-data mr-1 font-semibold text-secondary">
+                    {deal.days.length <= 2
+                      ? deal.days.map((d) => DAY_LABELS[d]).join("/")
+                      : `${DAY_LABELS[deal.days[0]]}+`}
+                  </span>
+                )}
+                {deal.item}
+              </span>
               {deal.price && (
                 <span className="font-data rounded-full bg-accent px-1.5 py-px text-[10px] font-semibold text-[#241c15]">
                   {deal.price}
