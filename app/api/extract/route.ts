@@ -24,6 +24,7 @@ Return ONLY a JSON object matching this shape (no markdown, no commentary):
 {
   "is_menu": boolean,            // is this actually a menu / deal board?
   "restaurant_candidates": string[],  // restaurant names visible or inferable, best first
+  "address": string | null,      // street address if printed anywhere on the menu
   "happy_hour_days": ("mon"|"tue"|"wed"|"thu"|"fri"|"sat"|"sun")[],
   "start": "HH:MM" | null,       // 24h happy hour start if stated
   "end": "HH:MM" | null,
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
     const demo: Extraction = {
       is_menu: true,
       restaurant_candidates: ["(demo) Add ANTHROPIC_API_KEY to enable real extraction"],
+      address: null,
       happy_hour_days: ["mon", "tue", "wed", "thu", "fri"],
       start: "15:00",
       end: "18:00",

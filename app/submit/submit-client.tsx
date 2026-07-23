@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Extraction } from "@/lib/ai/schemas";
 import { CATEGORIES, CATEGORY_KEYS, type Category } from "@/lib/categories";
+import { bestAddressMatch, bestNameMatch } from "@/lib/match";
 import { DAYS, DAY_LABELS, type Day } from "@/lib/types";
+
+interface KnownSpot {
+  slug: string;
+  name: string;
+  address: string;
+}
 
 type Stage = "pick" | "extracting" | "review" | "done";
 
@@ -65,9 +72,12 @@ const inputCls =
 
 export default function SubmitClient({
   target,
+  knownSpots,
 }: {
   /** When set, this submission updates an existing spot instead of creating one. */
   target: { slug: string; name: string } | null;
+  /** Every listed spot — duplicate detection on the review screen. */
+  knownSpots: KnownSpot[];
 }) {
   const [stage, setStage] = useState<Stage>("pick");
   const [photos, setPhotos] = useState<File[]>([]);
@@ -79,6 +89,19 @@ export default function SubmitClient({
   const [liveSlug, setLiveSlug] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [extractedAddress, setExtractedAddress] = useState<string | null>(null);
+  const [useMatch, setUseMatch] = useState(true);
+
+  /** Duplicate guard — one listing per physical restaurant. The address
+   * printed on the menu wins; otherwise fuzzy name match ("Boheme" →
+   * "Bar Boheme"). */
+  const suggestion = useMemo(() => {
+    if (target || !draft?.restaurant.trim()) return null;
+    return (
+      (extractedAddress ? bestAddressMatch(extractedAddress, knownSpots) : null) ??
+      bestNameMatch(draft.restaurant, knownSpots)
+    );
+  }, [target, draft?.restaurant, extractedAddress, knownSpots]);
 
   async function onFiles(list: FileList) {
     setError(null);
@@ -118,6 +141,8 @@ export default function SubmitClient({
         anyDemo = anyDemo || Boolean(data.demo);
       }
       setDraft(draftFromExtractions(extractions, target?.name));
+      setExtractedAddress(extractions.find((x) => x.address)?.address ?? null);
+      setUseMatch(true);
       setDemo(anyDemo);
       setStage("review");
     } catch {
@@ -146,8 +171,9 @@ export default function SubmitClient({
       form.append(
         "payload",
         JSON.stringify({
-          restaurant_name: draft.restaurant.trim(),
-          spot_slug: target?.slug ?? null,
+          restaurant_name:
+            useMatch && suggestion ? suggestion.name : draft.restaurant.trim(),
+          spot_slug: target?.slug ?? (useMatch && suggestion ? suggestion.slug : null),
           neighborhood: draft.neighborhood.trim() || null,
           days: draft.days,
           start: draft.start || null,
@@ -410,13 +436,49 @@ export default function SubmitClient({
             </button>
           </div>
 
+          {suggestion && (
+            <div className="space-y-2 rounded-2xl border border-accent/60 bg-accent/10 p-4 text-sm">
+              <p className="text-ink">
+                ⚠️ This looks like{" "}
+                <span className="font-display font-semibold">{suggestion.name}</span>
+                {suggestion.address && <span className="text-muted"> ({suggestion.address})</span>}
+                , which is already listed — one listing per restaurant keeps votes and history
+                together.
+              </p>
+              <div className="flex flex-wrap gap-3 text-sm">
+                <label className="flex items-center gap-1.5">
+                  <input
+                    type="radio"
+                    checked={useMatch}
+                    onChange={() => setUseMatch(true)}
+                    name="dupe"
+                  />
+                  Update {suggestion.name}
+                </label>
+                <label className="flex items-center gap-1.5 text-muted">
+                  <input
+                    type="radio"
+                    checked={!useMatch}
+                    onChange={() => setUseMatch(false)}
+                    name="dupe"
+                  />
+                  No, this is a different restaurant
+                </label>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button
               onClick={submit}
               disabled={busy}
               className="flex-1 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-40"
             >
-              {busy ? "Publishing…" : "Publish it"}
+              {busy
+                ? "Publishing…"
+                : suggestion && useMatch
+                  ? `Publish → update ${suggestion.name}`
+                  : "Publish it"}
             </button>
             <button
               onClick={() => {

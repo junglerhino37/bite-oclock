@@ -16,6 +16,9 @@ const hhmm = z
 export const ExtractionSchema = z.object({
   is_menu: z.boolean(),
   restaurant_candidates: z.array(z.string().max(120)).max(5),
+  /** Street address printed on the menu — a dedupe signal ("one listing per
+   * physical restaurant"), matched against known spots on the review screen. */
+  address: z.string().max(160).nullable().catch(null),
   happy_hour_days: z.array(dayEnum).max(7),
   start: hhmm,
   end: hhmm,

@@ -3,7 +3,8 @@ import { revalidatePath } from "next/cache";
 import { createHash } from "crypto";
 import { SubmissionSchema } from "@/lib/ai/schemas";
 import { getServiceDb, UPLOADS_BUCKET } from "@/lib/db";
-import { slugifyName } from "@/lib/live";
+import { getAllSpots, slugifyName } from "@/lib/live";
+import { bestNameMatch } from "@/lib/match";
 import { rateLimit, clientKey } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
@@ -176,7 +177,16 @@ export async function POST(req: Request) {
     ? ((await fetchOgImage(sourceUrl)) ?? (await fetchViaMicrolink(sourceUrl)))
     : null;
 
-  const slug = payload.spot_slug ?? slugifyName(payload.restaurant_name);
+  // One listing per physical restaurant: clients confirm fuzzy matches in the
+  // UI, but a strong name match (exact/substring — "Boheme" ⊂ "Bar Boheme")
+  // gets attached here too, so no API path can mint a near-duplicate.
+  let spotSlug = payload.spot_slug ?? null;
+  if (!spotSlug) {
+    const match = bestNameMatch(payload.restaurant_name, await getAllSpots(), 1);
+    if (match) spotSlug = match.slug;
+  }
+
+  const slug = spotSlug ?? slugifyName(payload.restaurant_name);
   const { data, error } = await db
     .from("submissions")
     .insert({
@@ -190,7 +200,7 @@ export async function POST(req: Request) {
       // New columns omitted when absent so pre-migration instances still work.
       ...(photoPaths.length > 1 ? { photo_paths: photoPaths } : {}),
       ...(payload.note ? { note: payload.note } : {}),
-      ...(payload.spot_slug ? { spot_slug: payload.spot_slug } : {}),
+      ...(spotSlug ? { spot_slug: spotSlug } : {}),
       ...(sourceUrl ? { source_url: sourceUrl } : {}),
       ...(imageUrl ? { image_url: imageUrl } : {}),
       status: "approved", // publishes immediately; votes are the quality gate

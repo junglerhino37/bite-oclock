@@ -45,6 +45,12 @@ community keeps them honest:
   insert a `deals: []` version and clear the stale hours votes.
 - **Instant publish**: write routes call `revalidatePath` so changes appear
   immediately, not on the next ISR pass.
+- **One listing per physical restaurant** (`lib/match.ts`): submissions and
+  Ask-bar adds fuzzy-match the name ("Boheme" ⊂ "Bar Boheme", "Marno" →
+  "Marmo") and the address printed on the menu against known spots. The
+  review screen confirms the match with the user; the submit route silently
+  attaches exact/substring matches as a safety net. Never let two listings
+  exist for the same address — merge by setting `spot_slug`.
 
 Takedowns: set a submission's `status` to `rejected` in the database (or add
 tooling for it) — rejected rows never leave the DB but drop out of the site.

@@ -7,6 +7,7 @@ import type { DealFilter, Spot } from "@/lib/types";
 import { EMPTY_FILTER } from "@/lib/types";
 import type { Category } from "@/lib/categories";
 import { CATEGORIES, isCategory } from "@/lib/categories";
+import { bestNameMatch, normalizeName } from "@/lib/match";
 
 interface AddIntent {
   restaurant_name: string;
@@ -23,51 +24,8 @@ interface PendingAdd {
   match: Spot | null;
 }
 
-function normalizeName(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/\b(happy hour|menu|page)\b/g, "")
-    .replace(/^(the|a)\s+/, "")
-    .replace(/[^a-z0-9]+/g, "");
-}
-
-function levenshtein(a: string, b: string): number {
-  const dp = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    let prev = dp[0];
-    dp[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const cur = dp[j];
-      dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
-      prev = cur;
-    }
-  }
-  return dp[b.length];
-}
-
 /** "julep" → the Julep listing even with a typo or missing "The". */
-function bestMatch(name: string, spots: Spot[]): Spot | null {
-  const n = normalizeName(name);
-  if (!n) return null;
-  let best: Spot | null = null;
-  let bestScore = Infinity;
-  for (const spot of spots) {
-    const c = normalizeName(spot.name);
-    let score: number;
-    if (c === n) score = 0;
-    else if (c.startsWith(n) || n.startsWith(c) || c.includes(n)) score = 1;
-    else {
-      const d = levenshtein(n, c);
-      score = d <= Math.max(2, Math.floor(n.length / 4)) ? 2 + d : Infinity;
-    }
-    if (score < bestScore) {
-      bestScore = score;
-      best = spot;
-    }
-  }
-  return bestScore === Infinity ? null : best;
-}
+const bestMatch = (name: string, spots: Spot[]): Spot | null => bestNameMatch(name, spots);
 
 function prettyUrl(url: string): string {
   try {
