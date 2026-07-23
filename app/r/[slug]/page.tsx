@@ -61,7 +61,12 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
             {formatTimeRange(spot)}
           </span>
           {spot.addedAt && (
-            <span className="font-data rounded-full bg-surface/70 px-3 py-1 text-xs text-muted shadow-sm">
+            <span
+              suppressHydrationWarning
+              className={`font-data rounded-full bg-surface/70 px-3 py-1 text-xs text-muted shadow-sm ${
+                Date.now() - Date.parse(spot.addedAt) < 24 * 60 * 60 * 1000 ? "updated-flash" : ""
+              }`}
+            >
               Updated {formatDate(spot.addedAt)}
             </span>
           )}

@@ -31,6 +31,10 @@ export default function DealCard({
   const meta = CATEGORIES[dominant];
   const live = isLiveNow(spot);
   const verified = latestVerified(spot);
+  // Flash a badge for a day after a community update so a refreshed listing
+  // stands out on the grid (an update changes an existing card in place).
+  const updatedRecently =
+    spot.addedAt != null && Date.now() - Date.parse(spot.addedAt) < 24 * 60 * 60 * 1000;
 
   return (
     <Link
@@ -53,6 +57,14 @@ export default function DealCard({
         {live && (
           <span className="live-dot absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-[#241c15]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#241c15]" /> LIVE NOW
+          </span>
+        )}
+        {updatedRecently && spot.addedAt && (
+          <span
+            suppressHydrationWarning
+            className="updated-flash absolute right-3 top-3 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-white"
+          >
+            ✨ Updated {timeAgo(spot.addedAt)}
           </span>
         )}
         <span className="font-data absolute bottom-3 right-3 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-medium text-ink shadow-sm">
