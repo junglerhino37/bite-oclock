@@ -45,6 +45,9 @@ export const SubmissionSchema = z.object({
     .max(80)
     .nullable()
     .optional(),
+  /** Free-text submitter note for things the menu photo doesn't say
+   * ("cash only", "bar seating only", "must order a drink"). */
+  note: z.string().max(500).nullable().optional(),
   neighborhood: z.string().max(60).nullable(),
   days: z.array(dayEnum).max(7),
   start: hhmm,

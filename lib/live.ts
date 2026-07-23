@@ -27,6 +27,8 @@ interface SubRow {
   end_time: unknown;
   deals: unknown;
   photo_path?: string | null;
+  photo_paths?: string[] | null;
+  note?: string | null;
   spot_slug?: string | null;
   created_at: string;
 }
@@ -88,8 +90,8 @@ export async function getAllSpots(): Promise<Spot[]> {
   const db = getServiceDb();
   if (!db) return seed;
 
-  const subCols =
-    "id, restaurant_name, neighborhood, days, start_time, end_time, deals, photo_path, spot_slug, created_at";
+  const newCols = ", photo_paths, note, spot_slug";
+  const subCols = `id, restaurant_name, neighborhood, days, start_time, end_time, deals, photo_path${newCols}, created_at`;
   const fetchSubs = (cols: string) =>
     db
       .from("submissions")
@@ -102,8 +104,8 @@ export async function getAllSpots(): Promise<Spot[]> {
     }>;
   let subsRes = await fetchSubs(subCols);
   if (subsRes.error) {
-    // Instance predates migration 0003 (no spot_slug column) — degrade gracefully.
-    subsRes = await fetchSubs(subCols.replace(", spot_slug", ""));
+    // Instance predates migrations 0003/0004 — degrade gracefully.
+    subsRes = await fetchSubs(subCols.replace(newCols, ""));
   }
   if (subsRes.error || !subsRes.data) {
     if (subsRes.error) console.error("live spots query failed:", subsRes.error.message);
@@ -132,6 +134,16 @@ export async function getAllSpots(): Promise<Spot[]> {
 
   const spots: Spot[] = [];
 
+  const rowPhotoUrls = (row: SubRow): string[] => {
+    const paths =
+      Array.isArray(row.photo_paths) && row.photo_paths.length > 0
+        ? row.photo_paths
+        : row.photo_path
+          ? [row.photo_path]
+          : [];
+    return paths.flatMap((p) => photoUrl(p) ?? []);
+  };
+
   const overlay = (base: Spot | null, slug: string, rows: SubRow[]): Spot | null => {
     const versions: SpotVersion[] = [];
     if (base) {
@@ -140,7 +152,8 @@ export async function getAllSpots(): Promise<Spot[]> {
         start: base.start,
         end: base.end,
         deals: base.deals,
-        photoUrl: null,
+        photoUrls: [],
+        note: null,
         addedAt: base.sourceDate,
         source: "seed",
       });
@@ -155,14 +168,16 @@ export async function getAllSpots(): Promise<Spot[]> {
         start: hhmm(row.start_time) ?? (deals.length === 0 ? null : (prev?.start ?? null)),
         end: hhmm(row.end_time) ?? (deals.length === 0 ? null : (prev?.end ?? null)),
         deals: deals.length > 0 ? deals : (prev?.deals ?? []),
-        photoUrl: photoUrl(row.photo_path),
+        photoUrls: rowPhotoUrls(row),
+        note: typeof row.note === "string" && row.note.trim() ? row.note.trim() : null,
         addedAt: row.created_at,
         source: "community",
       });
     }
     const current = versions[versions.length - 1];
     if (!current || current.deals.length === 0) return null;
-    const latestPhoto = [...versions].reverse().find((v) => v.photoUrl)?.photoUrl ?? null;
+    const latestPhotos =
+      [...versions].reverse().find((v) => v.photoUrls.length > 0)?.photoUrls ?? [];
     const latestSub = rows[rows.length - 1];
     const neighborhood =
       base?.neighborhood ??
@@ -183,7 +198,8 @@ export async function getAllSpots(): Promise<Spot[]> {
       sourceUrl: base?.sourceUrl ?? null,
       sourceDate: base?.sourceDate ?? null,
       notes: base?.notes ?? (rows.length > 0 ? "Community-submitted from a menu photo." : null),
-      photoUrl: latestPhoto,
+      photoUrls: latestPhotos,
+      communityNote: current.note,
       addedAt: current.source === "community" ? current.addedAt : null,
       history: versions.slice(0, -1).reverse(),
       verification: votes.get(slug),

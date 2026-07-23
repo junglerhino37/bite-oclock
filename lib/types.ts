@@ -41,8 +41,10 @@ export interface Spot {
   sourceUrl: string | null;
   sourceDate: string | null;
   notes: string | null;
-  /** Latest community menu snapshot, when one has been uploaded. */
-  photoUrl?: string | null;
+  /** Menu snapshots from the current version (latest submission with photos). */
+  photoUrls?: string[];
+  /** Submitter note on the current version ("cash only", "patio only"…). */
+  communityNote?: string | null;
   /** When the current version of this listing was added (ISO, community only). */
   addedAt?: string | null;
   /** Older versions of the happy hour, newest first (excludes the current one). */
@@ -70,8 +72,10 @@ export interface SpotVersion {
   start: string | null;
   end: string | null;
   deals: Deal[];
-  /** Menu snapshot uploaded with this version, when there was one. */
-  photoUrl: string | null;
+  /** Menu snapshots uploaded with this version (empty when none). */
+  photoUrls: string[];
+  /** Submitter note that came with this version, if any. */
+  note: string | null;
   /** ISO timestamp (community) or source date string (seed). */
   addedAt: string | null;
   source: "seed" | "community";

@@ -32,6 +32,7 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
   if (!spot) notFound();
   const dominant = CATEGORIES[spot.deals[0]?.category ?? "barfood"];
   const history = spot.history ?? [];
+  const photos = spot.photoUrls ?? [];
 
   return (
     <article className="space-y-8 pt-6">
@@ -66,6 +67,13 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
           )}
         </div>
       </div>
+
+      {spot.communityNote && (
+        <p className="rounded-2xl border border-line bg-sunken/60 px-5 py-3.5 text-sm text-ink">
+          📝 <span className="italic">&ldquo;{spot.communityNote}&rdquo;</span>
+          <span className="ml-1.5 text-xs text-muted">— submitter note</span>
+        </p>
+      )}
 
       <section>
         <h2 className="font-display text-2xl font-semibold text-ink">The deals</h2>
@@ -143,20 +151,30 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
         </div>
       </section>
 
-      {spot.photoUrl ? (
+      {photos.length > 0 ? (
         <section>
-          <h2 className="font-display text-2xl font-semibold text-ink">Menu snapshot</h2>
-          <figure className="mt-3 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm sm:max-w-md">
-            <a href={spot.photoUrl} target="_blank" rel="noopener noreferrer">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={spot.photoUrl} alt={`Happy hour menu at ${spot.name}`} className="w-full" />
-            </a>
-            {spot.addedAt && (
-              <figcaption className="px-4 py-2.5 text-xs text-muted">
-                Snapped {formatDate(spot.addedAt)} — deals above come from this menu.
-              </figcaption>
-            )}
-          </figure>
+          <h2 className="font-display text-2xl font-semibold text-ink">
+            Menu snapshot{photos.length > 1 ? "s" : ""}
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {photos.map((url, i) => (
+              <figure
+                key={i}
+                className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm"
+              >
+                <a href={url} target="_blank" rel="noopener noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`Happy hour menu at ${spot.name}`} className="w-full" />
+                </a>
+                {spot.addedAt && i === 0 && (
+                  <figcaption className="px-4 py-2.5 text-xs text-muted">
+                    Snapped {formatDate(spot.addedAt)} — deals above come from{" "}
+                    {photos.length > 1 ? "these menus" : "this menu"}.
+                  </figcaption>
+                )}
+              </figure>
+            ))}
+          </div>
         </section>
       ) : (
         <section className="rounded-2xl border-2 border-dashed border-line bg-surface p-6 text-center">
@@ -185,16 +203,16 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
           <ol className="space-y-4 border-t border-line px-5 py-4">
             {history.map((v, i) => (
               <li key={i} className="flex gap-4">
-                {v.photoUrl ? (
+                {v.photoUrls.length > 0 ? (
                   <a
-                    href={v.photoUrl}
+                    href={v.photoUrls[0]}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={v.photoUrl}
+                      src={v.photoUrls[0]}
                       alt="Older menu snapshot"
                       className="h-16 w-16 rounded-xl border border-line object-cover"
                     />
@@ -220,6 +238,7 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
                       .join(" · ")}
                     {v.deals.length > 4 ? ` · +${v.deals.length - 4} more` : ""}
                   </p>
+                  {v.note && <p className="mt-0.5 text-xs italic text-muted">📝 {v.note}</p>}
                 </div>
               </li>
             ))}

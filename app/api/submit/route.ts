@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const MAX_PHOTO = 10 * 1024 * 1024;
+const MAX_PHOTOS = 4;
 
 function sniffImageType(buf: Buffer): { mime: string; ext: string } | null {
   if (buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff)
@@ -59,25 +60,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ stored: false, demo: true });
   }
 
-  let photoPath: string | null = null;
-  const photo = form.get("photo");
-  if (photo instanceof File && photo.size > 0) {
-    if (photo.size > MAX_PHOTO) {
+  // Accept several menu photos ('photos'), with the old single 'photo' field
+  // still working. Validate each before uploading any.
+  const files = [...form.getAll("photos"), form.get("photo")].filter(
+    (f): f is File => f instanceof File && f.size > 0,
+  );
+  if (files.length > MAX_PHOTOS) {
+    return NextResponse.json({ error: `At most ${MAX_PHOTOS} photos.` }, { status: 413 });
+  }
+  const buffers: { buf: Buffer; ext: string; mime: string }[] = [];
+  for (const file of files) {
+    if (file.size > MAX_PHOTO) {
       return NextResponse.json({ error: "Photo too large (10 MB max)." }, { status: 413 });
     }
-    const buf = Buffer.from(await photo.arrayBuffer());
+    const buf = Buffer.from(await file.arrayBuffer());
     const kind = sniffImageType(buf);
     if (!kind) {
       return NextResponse.json({ error: "Only JPEG, PNG, or WebP photos." }, { status: 415 });
     }
-    photoPath = `pending/${crypto.randomUUID()}.${kind.ext}`;
+    buffers.push({ buf, ...kind });
+  }
+  const photoPaths: string[] = [];
+  for (const { buf, ext, mime } of buffers) {
+    const path = `pending/${crypto.randomUUID()}.${ext}`;
     const { error: upErr } = await db.storage
       .from(UPLOADS_BUCKET)
-      .upload(photoPath, buf, { contentType: kind.mime });
-    if (upErr) {
-      console.error("photo upload failed:", upErr.message);
-      photoPath = null; // photo is nice-to-have; the submission still counts
-    }
+      .upload(path, buf, { contentType: mime });
+    if (upErr) console.error("photo upload failed:", upErr.message);
+    else photoPaths.push(path); // photos are nice-to-have; the submission still counts
   }
 
   const slug = payload.spot_slug ?? slugifyName(payload.restaurant_name);
@@ -90,8 +100,10 @@ export async function POST(req: Request) {
       start_time: payload.start,
       end_time: payload.end,
       deals: payload.deals,
-      photo_path: photoPath,
-      // Omitted when absent so instances that predate migration 0003 still work.
+      photo_path: photoPaths[0] ?? null,
+      // New columns omitted when absent so pre-migration instances still work.
+      ...(photoPaths.length > 1 ? { photo_paths: photoPaths } : {}),
+      ...(payload.note ? { note: payload.note } : {}),
       ...(payload.spot_slug ? { spot_slug: payload.spot_slug } : {}),
       status: "approved", // publishes immediately; votes are the quality gate
       submitter_ip_hash: createHash("sha256").update(key).digest("hex").slice(0, 16),

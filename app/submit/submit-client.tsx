@@ -22,22 +22,41 @@ interface Draft {
   start: string; // "" = unknown
   end: string;
   deals: EditableDeal[];
+  /** Submitter note for things the photos don't say ("cash only", "patio only"). */
+  note: string;
 }
 
-function draftFromExtraction(x: Extraction, targetName?: string): Draft {
+const MAX_PHOTOS = 4;
+
+/** Merge extractions from several photos of the same menu: deals concatenate
+ * (de-duped by item name), days/times come from the first photo that had them. */
+function draftFromExtractions(extractions: Extraction[], targetName?: string): Draft {
+  const first = extractions[0];
+  const withDays = extractions.find((x) => x.happy_hour_days.length > 0);
+  const withTimes = extractions.find((x) => x.start || x.end);
+  const seen = new Set<string>();
+  const deals = extractions
+    .flatMap((x) => x.deals)
+    .filter((d) => {
+      const key = d.item.trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   return {
-    restaurant: targetName ?? x.restaurant_candidates[0] ?? "",
+    restaurant: targetName ?? first?.restaurant_candidates[0] ?? "",
     neighborhood: "",
-    days: x.happy_hour_days as Day[],
+    days: (withDays?.happy_hour_days ?? []) as Day[],
     // Menus often omit times; 3–6 PM is the Houston default, editable below.
-    start: x.start || "15:00",
-    end: x.end || "18:00",
-    deals: x.deals.map((d) => ({
+    start: withTimes?.start || "15:00",
+    end: withTimes?.end || "18:00",
+    deals: deals.map((d) => ({
       item: d.item,
       price: d.price ?? "",
       category: d.category as Category,
       description: d.description ?? "",
     })),
+    note: "",
   };
 }
 
@@ -51,8 +70,9 @@ export default function SubmitClient({
   target: { slug: string; name: string } | null;
 }) {
   const [stage, setStage] = useState<Stage>("pick");
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [progress, setProgress] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [demo, setDemo] = useState(false);
   const [stored, setStored] = useState(false);
@@ -60,35 +80,51 @@ export default function SubmitClient({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function onFile(file: File) {
+  async function onFiles(list: FileList) {
     setError(null);
-    if (!file.type.startsWith("image/")) {
-      setError("That doesn't look like an image.");
-      return;
+    const files = [...list].slice(0, MAX_PHOTOS);
+    if ([...list].length > MAX_PHOTOS) {
+      setError(`Up to ${MAX_PHOTOS} photos — using the first ${MAX_PHOTOS}.`);
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setError("10 MB max — try a smaller photo.");
-      return;
-    }
-    setPhoto(file);
-    setPreview(URL.createObjectURL(file));
-    setStage("extracting");
-    try {
-      const form = new FormData();
-      form.append("photo", file);
-      const res = await fetch("/api/extract", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Extraction failed.");
-        setStage("pick");
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        setError("One of those files doesn't look like an image.");
         return;
       }
-      setDraft(draftFromExtraction(data.extraction, target?.name));
-      setDemo(Boolean(data.demo));
+      if (file.size > 10 * 1024 * 1024) {
+        setError("10 MB max per photo — try smaller ones.");
+        return;
+      }
+    }
+    if (files.length === 0) return;
+    setPhotos(files);
+    setPreviews(files.map((f) => URL.createObjectURL(f)));
+    setStage("extracting");
+    try {
+      const extractions: Extraction[] = [];
+      let anyDemo = false;
+      for (let i = 0; i < files.length; i++) {
+        setProgress(files.length > 1 ? `Reading photo ${i + 1} of ${files.length}…` : null);
+        const form = new FormData();
+        form.append("photo", files[i]);
+        const res = await fetch("/api/extract", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? "Extraction failed.");
+          setStage("pick");
+          return;
+        }
+        extractions.push(data.extraction);
+        anyDemo = anyDemo || Boolean(data.demo);
+      }
+      setDraft(draftFromExtractions(extractions, target?.name));
+      setDemo(anyDemo);
       setStage("review");
     } catch {
       setError("Network error — try again.");
       setStage("pick");
+    } finally {
+      setProgress(null);
     }
   }
 
@@ -116,6 +152,7 @@ export default function SubmitClient({
           days: draft.days,
           start: draft.start || null,
           end: draft.end || null,
+          note: draft.note.trim() || null,
           deals: deals.map((d) => ({
             item: d.item.trim(),
             price: d.price.trim() || null,
@@ -124,7 +161,7 @@ export default function SubmitClient({
           })),
         }),
       );
-      if (photo) form.append("photo", photo);
+      for (const p of photos) form.append("photos", p);
       const res = await fetch("/api/submit", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) {
@@ -170,28 +207,34 @@ export default function SubmitClient({
       {stage === "pick" && (
         <label className="block cursor-pointer rounded-3xl border-2 border-dashed border-line bg-surface p-10 text-center transition-colors hover:border-primary">
           <span className="text-5xl">📸</span>
-          <p className="font-display mt-3 text-lg text-ink">Upload a menu photo</p>
-          <p className="mt-1 text-xs text-muted">JPEG, PNG, or WebP · 10 MB max</p>
+          <p className="font-display mt-3 text-lg text-ink">Upload menu photos</p>
+          <p className="mt-1 text-xs text-muted">
+            Up to {MAX_PHOTOS} photos (front + back, both pages…) · JPEG, PNG, or WebP · 10 MB each
+          </p>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             className="hidden"
-            onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
+            onChange={(e) => e.target.files && onFiles(e.target.files)}
           />
         </label>
       )}
 
       {stage === "extracting" && (
         <div className="rounded-3xl border border-line bg-surface p-10 text-center">
-          {preview && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={preview}
-              alt="Menu preview"
-              className="mx-auto max-h-64 rounded-2xl object-contain"
-            />
-          )}
-          <p className="font-display mt-4 text-lg text-ink">Reading the menu…</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {previews.map((p, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={p}
+                alt={`Menu photo ${i + 1}`}
+                className="max-h-48 rounded-2xl object-contain"
+              />
+            ))}
+          </div>
+          <p className="font-display mt-4 text-lg text-ink">{progress ?? "Reading the menu…"}</p>
           <p className="mt-1 text-xs text-muted">Prices, times, and dishes are being extracted.</p>
         </div>
       )}
@@ -206,13 +249,18 @@ export default function SubmitClient({
           )}
 
           <div className="flex gap-4 rounded-2xl border border-line bg-surface p-5">
-            {preview && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={preview}
-                alt="Your menu photo"
-                className="h-24 w-24 shrink-0 rounded-xl object-cover"
-              />
+            {previews.length > 0 && (
+              <div className="flex shrink-0 flex-col gap-2">
+                {previews.map((p, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={p}
+                    alt={`Your menu photo ${i + 1}`}
+                    className="h-24 w-24 rounded-xl object-cover"
+                  />
+                ))}
+              </div>
             )}
             <div className="min-w-0 flex-1 space-y-2">
               <label className="block text-xs font-medium uppercase tracking-wide text-muted">
@@ -234,6 +282,20 @@ export default function SubmitClient({
                 />
               </label>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-line bg-surface p-5">
+            <label className="block text-xs font-medium uppercase tracking-wide text-muted">
+              Anything the menu doesn&rsquo;t say? <span className="normal-case">(optional)</span>
+              <textarea
+                value={draft.note}
+                onChange={(e) => setDraft({ ...draft, note: e.target.value })}
+                maxLength={500}
+                rows={2}
+                placeholder='e.g. "Bar seating only", "Cash only", "Everyday 3–6 even though the menu doesn&apos;t say"'
+                className={`${inputCls} mt-1 resize-y`}
+              />
+            </label>
           </div>
 
           <div className="rounded-2xl border border-line bg-surface p-5">
@@ -360,8 +422,8 @@ export default function SubmitClient({
               onClick={() => {
                 setStage("pick");
                 setDraft(null);
-                setPhoto(null);
-                setPreview(null);
+                setPhotos([]);
+                setPreviews([]);
               }}
               className="rounded-full border border-line bg-surface px-5 py-2.5 text-sm text-ink hover:bg-sunken"
             >
