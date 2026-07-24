@@ -51,7 +51,24 @@ export async function geocodeQuery(query: string): Promise<GeoResult | null> {
   }
 }
 
-/** Address hint first (menus/users are precise), then a name lookup. */
+/** People type "bambolinos on westheimer"; OSM knows "Bambolino's".
+ * Strip location filler and try apostrophe variants (names ending in s are
+ * usually possessives: pistoleros → Pistolero's). */
+function nameVariants(raw: string): string[] {
+  const cleaned = raw.trim().replace(/\s+/g, " ");
+  const m = cleaned.match(/^(.+?)\s+(?:on|at|off|near|in)\s+.+$/i);
+  const base = (m ? m[1] : cleaned).trim();
+  const words = base.split(" ");
+  const last = words[words.length - 1];
+  const apos =
+    /^[A-Za-z]{3,}s$/.test(last) && !/['’]s$/.test(last)
+      ? [...words.slice(0, -1), `${last.slice(0, -1)}'s`].join(" ")
+      : null;
+  return [...new Set([base, apos, cleaned].filter((v): v is string => !!v))];
+}
+
+/** Address hint first (menus/users are precise), then name-variant lookups
+ * (sequential with a 1s gap per Nominatim's usage policy). */
 export async function geocodeSpot(
   name: string,
   addressHint: string | null,
@@ -61,5 +78,12 @@ export async function geocodeSpot(
     const byAddress = await geocodeQuery(q);
     if (byAddress) return byAddress;
   }
-  return geocodeQuery(`${name}, Houston, TX`);
+  let first = true;
+  for (const variant of nameVariants(name)) {
+    if (!first) await new Promise((r) => setTimeout(r, 1000));
+    first = false;
+    const hit = await geocodeQuery(`${variant}, Houston, TX`);
+    if (hit) return hit;
+  }
+  return null;
 }

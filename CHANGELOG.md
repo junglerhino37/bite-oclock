@@ -3,6 +3,12 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.10.1 — 2026-07-24
+
+- Address lookup speaks human: "bambolinos on westheimer" now resolves —
+  location filler ("on/at/near …") is stripped and apostrophe variants
+  are tried (bambolinos → Bambolino's, pistoleros → Pistolero's).
+
 ## 1.10.0 — 2026-07-24
 
 - **OCR dialed in.** Photos are auto-rotated (EXIF) and optimized with
