@@ -27,14 +27,24 @@ export async function GET() {
   });
 }
 
-/** One bump per browser session (the client guards with sessionStorage). */
+const EVENTS = new Set(["visits", "nav"]);
+
+/** Event counters: visits (one per browser session, client-guarded) and
+ * nav ("Take me there" taps — the intent-to-go metric). */
 export async function POST(req: Request) {
   if (!rateLimit(`stats:${clientKey(req)}`, 120, 60 * 60 * 1000)) {
     return NextResponse.json({ error: "Rate limit exceeded." }, { status: 429 });
   }
   const db = getServiceDb();
   if (!db) return NextResponse.json({ ok: false });
-  const { error } = await db.rpc("bump_visits");
-  if (error) console.error("visit bump failed:", error.message);
+  let event = "visits";
+  try {
+    const body = await req.json();
+    if (typeof body?.event === "string" && EVENTS.has(body.event)) event = body.event;
+  } catch {
+    // beacon posts may have no/odd body — count as a visit-shaped no-op
+  }
+  const { error } = await db.rpc("bump_stat", { k: event });
+  if (error) console.error("stat bump failed:", error.message);
   return NextResponse.json({ ok: !error });
 }

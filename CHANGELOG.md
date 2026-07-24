@@ -3,6 +3,13 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.13.0 — 2026-07-24
+
+- **"Take me there" taps are counted** (site_stats key `nav`, fired
+  keepalive so directions never wait) — the intent-to-go metric for
+  measuring real-world value. Migration 0008 adds a generic
+  bump_stat(key) upsert-increment.
+
 ## 1.12.0 — 2026-07-24
 
 - **Per-deal days are exceptions, not stamps.** An "Everyday Special"

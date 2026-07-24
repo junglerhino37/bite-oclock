@@ -6,6 +6,18 @@
  * Google Maps directions in a tab. */
 export default function NavButton({ name, address }: { name: string; address: string }) {
   const go = () => {
+    // Intent-to-go is THE value metric — count it (fire-and-forget,
+    // keepalive survives the navigation away).
+    try {
+      void fetch("/api/stats", {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: "nav" }),
+      });
+    } catch {
+      // never block directions on analytics
+    }
     const q = encodeURIComponent(address ? `${name}, ${address}` : `${name}, Houston, TX`);
     const ua = navigator.userAgent;
     if (/android/i.test(ua)) {
