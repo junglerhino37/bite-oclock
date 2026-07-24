@@ -3,6 +3,12 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.7.0 — 2026-07-23
+
+- **🧭 Take me there** — a directions button in the restaurant hero that
+  launches the navigation app (Google Maps universal link; exact
+  coordinates when known, name + address otherwise).
+
 ## 1.6.2 — 2026-07-23
 
 - Menu photos moved to the top of the restaurant page (above the deals),
