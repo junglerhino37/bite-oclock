@@ -1,10 +1,11 @@
 import { CATEGORIES, type Category } from "@/lib/categories";
 
-/** Category artwork. The painterly SVG set in /public/icons was a hand-coded
- * first pass that didn't clear the quality bar — flip PAINTED_ICONS_READY
- * once real art (AI-generated or commissioned) replaces those files. See
- * public/icons/README.md for the generation spec. Until then: emoji. */
-const PAINTED_ICONS_READY = false;
+/** Category artwork: Monet-style oil paintings (see public/icons/README.md
+ * for how the set was generated and how to regenerate a piece). The paintings
+ * sit on an opaque warm-cream ground, so they render as circular medallions —
+ * little framed canvases. Below MIN_PAINTING_SIZE a painting is an illegible
+ * smudge, so tiny call sites (filter chips, deal rows) keep the emoji glyph. */
+const MIN_PAINTING_SIZE = 28;
 
 export default function CategoryIcon({
   category,
@@ -15,7 +16,7 @@ export default function CategoryIcon({
   size?: number;
   className?: string;
 }) {
-  if (!PAINTED_ICONS_READY) {
+  if (size < MIN_PAINTING_SIZE) {
     return (
       <span
         aria-hidden
@@ -29,11 +30,12 @@ export default function CategoryIcon({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`/icons/${category}.svg`}
+      src={`/icons/${category}.jpg`}
       alt=""
       width={size}
       height={size}
       className={className}
+      style={{ borderRadius: "50%", objectFit: "cover" }}
       draggable={false}
     />
   );

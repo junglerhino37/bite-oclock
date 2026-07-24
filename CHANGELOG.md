@@ -3,6 +3,15 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.16.0 — 2026-07-24
+
+- **Real Monet icons.** Nine oil-painting category icons generated with an
+  actual image model (Gemini/Imagen), one consistent set: warm cream ground,
+  loose brushwork, silhouette-first subjects. Rendered as circular
+  medallions on cards, heroes, and bubbles; tiny call sites (filter chips,
+  deal rows) keep emoji for legibility. Regeneration spec in
+  public/icons/README.md.
+
 ## 1.15.1 — 2026-07-24
 
 - Painterly icons reverted to emoji (they weren't good enough). The
