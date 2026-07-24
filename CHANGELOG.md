@@ -3,6 +3,20 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.10.0 — 2026-07-24
+
+- **OCR dialed in.** Photos are auto-rotated (EXIF) and optimized with
+  sharp before reading; extraction upgraded to Claude Sonnet with a
+  bigger output budget and told that sideways menu boards are normal —
+  fixes the rotated-photo empty-items failure.
+- **Thinking, visibly.** Extraction shows named work steps ("Reading the
+  dish names…") while a plate of emoji gets eaten, then rotates true
+  Houston food lore (Ninfa's fajitas, Viet-Cajun, six square miles of
+  Chinatown) — perceived progress instead of a spinner.
+- **All day, open to close.** A window/all-day toggle on review: all-day
+  deals bound to the business's real hours, prefilled from
+  OpenStreetMap's opening_hours when tagged, labeled opens/closes.
+
 ## 1.9.0 — 2026-07-23
 
 - **Submit flow redesigned around the human.** Photos stage first (add,

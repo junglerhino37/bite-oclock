@@ -9,12 +9,15 @@ export interface GeoResult {
   lng: number;
   /** Derived from the location — nobody should have to type a neighborhood. */
   neighborhood: string | null;
+  /** OSM opening_hours string when tagged (e.g. "Mo-Su 11:00-21:00") —
+   * lets "all day" deals bound themselves to the business's real hours. */
+  openingHours: string | null;
 }
 
 export async function geocodeQuery(query: string): Promise<GeoResult | null> {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(query)}`,
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&extratags=1&q=${encodeURIComponent(query)}`,
       {
         signal: AbortSignal.timeout(6000),
         headers: { "user-agent": "bite-oclock/1.0 (Houston happy hour directory)" },
@@ -26,6 +29,7 @@ export async function geocodeQuery(query: string): Promise<GeoResult | null> {
       lon: string;
       display_name: string;
       address?: Record<string, string>;
+      extratags?: Record<string, string>;
     }[];
     const hit = data[0];
     if (!hit) return null;
@@ -35,7 +39,13 @@ export async function geocodeQuery(query: string): Promise<GeoResult | null> {
     const address = hit.display_name.split(",").slice(0, 3).join(",").trim().slice(0, 160);
     const neighborhood =
       hit.address?.suburb ?? hit.address?.neighbourhood ?? hit.address?.city_district ?? null;
-    return { address, lat, lng, neighborhood: neighborhood?.slice(0, 60) ?? null };
+    return {
+      address,
+      lat,
+      lng,
+      neighborhood: neighborhood?.slice(0, 60) ?? null,
+      openingHours: hit.extratags?.opening_hours?.slice(0, 120) ?? null,
+    };
   } catch {
     return null;
   }

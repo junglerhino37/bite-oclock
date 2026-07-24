@@ -33,12 +33,78 @@ interface Draft {
   days: Day[];
   start: string; // "" = unknown / open-ended
   end: string;
+  /** All-day deals run the business's full open–close hours. */
+  allDay: boolean;
   deals: EditableDeal[];
   /** Public note shown on the listing. */
   note: string;
 }
 
 const MAX_PHOTOS = 4;
+
+/** Perceived progress beats a spinner: name the work being done, in order,
+ * then keep the wait warm with true Houston food lore. */
+const WORK_LINES = [
+  "Reading the dish names…",
+  "Lining up the prices…",
+  "Checking which days…",
+  "Squinting at the fine print…",
+];
+const HOUSTON_BITES = [
+  "Ninfa's on Navigation popularized the fajita — right here in Houston.",
+  "Viet-Cajun crawfish was invented by Houston's Vietnamese community.",
+  "Greater Houston has 10,000+ restaurants. Pace yourself.",
+  "Houstonians famously eat out more than almost any city in America.",
+  "Houston's Chinatown covers six square miles of dumplings and boba.",
+  "Queso is a food group here. This is not up for debate.",
+];
+const PLATE = ["🍤", "🌮", "🍕", "🦪", "🍗", "🍖"];
+
+function ThinkingTicker() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((x) => x + 1), 2600);
+    return () => clearInterval(t);
+  }, []);
+  const line =
+    tick < WORK_LINES.length
+      ? WORK_LINES[tick]
+      : HOUSTON_BITES[(tick - WORK_LINES.length) % HOUSTON_BITES.length];
+  const eaten = tick % (PLATE.length + 1);
+  return (
+    <div className="mt-4">
+      <div aria-hidden className="flex justify-center gap-2 text-2xl">
+        {PLATE.map((e, i) => (
+          <span
+            key={i}
+            className="transition-all duration-300"
+            style={{ opacity: i < eaten ? 0.15 : 1, transform: i < eaten ? "scale(0.6)" : "none" }}
+          >
+            {e}
+          </span>
+        ))}
+      </div>
+      <p aria-live="polite" className="font-display mt-3 min-h-12 text-lg text-ink">
+        {line}
+      </p>
+      {tick >= WORK_LINES.length && (
+        <p className="text-[11px] uppercase tracking-wide text-muted">
+          Houston food fact while you wait
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** "Mo-Su 11:00-21:00" → first time range, good enough to prefill. */
+function parseOsmHours(s: string): { start: string; end: string } | null {
+  const m = s.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  return {
+    start: `${m[1].padStart(2, "0")}:${m[2]}`,
+    end: `${m[3].padStart(2, "0")}:${m[4]}`,
+  };
+}
 
 /** Merge extractions from several photos of the same menu: deals concatenate
  * (de-duped by item name), days/times come from the first photo that had them. */
@@ -62,6 +128,7 @@ function draftFromExtractions(extractions: Extraction[], targetName?: string): D
     // "Specials after 4 PM" keeps its open end — don't invent a closing time.
     start: withTimes?.start || "15:00",
     end: withTimes?.start && !withTimes.end ? "" : withTimes?.end || "18:00",
+    allDay: false,
     deals: deals.map((d) => ({
       item: d.item,
       price: d.price ?? "",
@@ -103,6 +170,8 @@ export default function SubmitClient({
   const [placeConfirmed, setPlaceConfirmed] = useState(false);
   const [looking, setLooking] = useState(false);
   const [useMatch, setUseMatch] = useState(true);
+  /** Business hours from OSM, when tagged — bounds "all day" deals. */
+  const [knownHours, setKnownHours] = useState<{ start: string; end: string } | null>(null);
 
   function addPhotos(list: FileList) {
     setError(null);
@@ -209,6 +278,9 @@ export default function SubmitClient({
           setAddress(data.result.address);
           setAddressAuto(true);
           setPlaceConfirmed(false);
+          setKnownHours(
+            data.result.openingHours ? parseOsmHours(data.result.openingHours) : null,
+          );
         }
       } catch {
         // Lookup is a convenience — silence is fine.
@@ -393,8 +465,8 @@ export default function SubmitClient({
               />
             ))}
           </div>
-          <p className="font-display mt-4 text-lg text-ink">{progress ?? "Reading the menu…"}</p>
-          <p className="mt-1 text-xs text-muted">Dishes, prices, days, and times.</p>
+          <ThinkingTicker />
+          {progress && <p className="mt-1 text-xs text-muted">{progress}</p>}
         </div>
       )}
 
@@ -516,6 +588,32 @@ export default function SubmitClient({
 
           <div className="rounded-2xl border border-line bg-surface p-5">
             <p className="text-xs font-medium uppercase tracking-wide text-muted">When does it run?</p>
+            <div className="mt-2 flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => setDraft({ ...draft, allDay: false })}
+                className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
+                  !draft.allDay ? "bg-secondary text-white" : "border border-line bg-surface text-muted hover:text-ink"
+                }`}
+              >
+                ⏰ Set window
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    allDay: true,
+                    ...(knownHours ? { start: knownHours.start, end: knownHours.end } : {}),
+                  })
+                }
+                className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
+                  draft.allDay ? "bg-secondary text-white" : "border border-line bg-surface text-muted hover:text-ink"
+                }`}
+              >
+                🌞 All day, open to close
+              </button>
+            </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {DAYS.map((d) => {
                 const on = draft.days.includes(d);
@@ -540,7 +638,7 @@ export default function SubmitClient({
             </div>
             <div className="mt-3 flex items-center gap-2 text-sm">
               <label className="flex items-center gap-2 text-muted">
-                from
+                {draft.allDay ? "opens" : "from"}
                 <input
                   type="time"
                   value={draft.start}
@@ -549,7 +647,7 @@ export default function SubmitClient({
                 />
               </label>
               <label className="flex items-center gap-2 text-muted">
-                to
+                {draft.allDay ? "closes" : "to"}
                 <input
                   type="time"
                   value={draft.end}
@@ -557,8 +655,14 @@ export default function SubmitClient({
                   className="rounded-xl border border-line bg-surface px-2 py-1.5 text-ink"
                 />
               </label>
-              <span className="text-xs text-muted">(leave &ldquo;to&rdquo; empty for open-ended)</span>
             </div>
+            {draft.allDay && (
+              <p className="mt-2 text-xs text-muted">
+                {knownHours
+                  ? "Prefilled from OpenStreetMap's hours for this place — double-check them."
+                  : "Enter the business's open and close times — the deal runs the whole day."}
+              </p>
+            )}
           </div>
 
           <div className="space-y-3 rounded-2xl border border-line bg-surface p-5">

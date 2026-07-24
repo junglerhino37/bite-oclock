@@ -9,7 +9,9 @@ export function getAnthropic(): Anthropic | null {
   return new Anthropic({ apiKey });
 }
 
-export const EXTRACTION_MODEL = process.env.EXTRACTION_MODEL ?? "claude-haiku-4-5-20251001";
+// Menu photos are hard OCR (rotated boards, glare, dense type) — worth the
+// bigger model. Haiku stays fine for the NL-query side.
+export const EXTRACTION_MODEL = process.env.EXTRACTION_MODEL ?? "claude-sonnet-5";
 export const QUERY_MODEL = process.env.QUERY_MODEL ?? "claude-haiku-4-5-20251001";
 
 /** Pull the first JSON object out of a model reply and return it raw.
