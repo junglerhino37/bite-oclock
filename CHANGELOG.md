@@ -3,6 +3,18 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.17.0 — 2026-07-24
+
+- **Chains get every location.** When Google knows several Houston locations
+  of a business (Slowpokes), each gets its own listing with its own pin,
+  address, and per-day hours — and a happy hour posted for the brand is
+  assumed to apply at all of them until voted otherwise. New deals mirror to
+  existing sibling listings; missing locations are created on the spot.
+- **Closing times stop going missing.** Business hours from Google now
+  persist with every submission (they previously only saved when the
+  all-day toggle was on), and updating a spot that never got hours
+  backfills them from its own location.
+
 ## 1.16.0 — 2026-07-24
 
 - **Real Monet icons.** Nine oil-painting category icons generated with an

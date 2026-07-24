@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createHash } from "crypto";
 import { SubmissionSchema } from "@/lib/ai/schemas";
 import { getServiceDb, UPLOADS_BUCKET } from "@/lib/db";
-import { geocodeSpot } from "@/lib/geocode";
+import { geocodeSpotAll, reverseNeighborhood, type GeoResult } from "@/lib/geocode";
 import { getAllSpots, slugifyName } from "@/lib/live";
 import { bestNameMatch } from "@/lib/match";
 import { rateLimit, clientKey } from "@/lib/ratelimit";
@@ -186,16 +186,25 @@ export async function POST(req: Request) {
   // One listing per physical restaurant: clients confirm fuzzy matches in the
   // UI, but a strong name match (exact/substring — "Boheme" ⊂ "Bar Boheme")
   // gets attached here too, so no API path can mint a near-duplicate.
+  const allSpots = await getAllSpots();
   let spotSlug = payload.spot_slug ?? null;
   if (!spotSlug) {
-    const match = bestNameMatch(payload.restaurant_name, await getAllSpots(), 1);
+    const match = bestNameMatch(payload.restaurant_name, allSpots, 1);
     if (match) spotSlug = match.slug;
   }
+  const matched = spotSlug ? (allSpots.find((s) => s.slug === spotSlug) ?? null) : null;
+
+  // All Houston locations of this business — locs[0] pins brand-new spots,
+  // the rest become sibling listings below (chains get one pin each).
+  const locs = await geocodeSpotAll(payload.restaurant_name, payload.address ?? null);
+  const near = (s: { lat: number | null; lng: number | null }, loc: GeoResult) =>
+    typeof s.lat === "number" &&
+    typeof s.lng === "number" &&
+    Math.abs(s.lat - loc.lat) < 0.002 &&
+    Math.abs(s.lng - loc.lng) < 0.002;
 
   // Brand-new spots must arrive with an exact location — no pin, no listing.
-  const geo = spotSlug
-    ? null
-    : await geocodeSpot(payload.restaurant_name, payload.address ?? null);
+  const geo = spotSlug ? null : (locs[0] ?? null);
   if (!spotSlug && !geo) {
     return NextResponse.json(
       {
@@ -203,6 +212,21 @@ export async function POST(req: Request) {
       },
       { status: 422 },
     );
+  }
+  if (geo && !geo.neighborhood) geo.neighborhood = await reverseNeighborhood(geo.lat, geo.lng);
+
+  // Business hours persist whenever we know them — the client only sends
+  // `hours` when the all-day toggle is on, but "when does this place close"
+  // matters for every listing (bubbles, cards, the hours table). An update to
+  // a spot that never got hours backfills them from its own location.
+  let hoursToStore = payload.hours ?? null;
+  if (!hoursToStore) {
+    if (geo) {
+      hoursToStore = geo.hoursByDay;
+    } else if (matched && !matched.hoursByDay) {
+      const ownLoc = locs.find((l) => near(matched, l)) ?? (locs.length === 1 ? locs[0] : null);
+      hoursToStore = ownLoc?.hoursByDay ?? null;
+    }
   }
 
   const slug = spotSlug ?? slugifyName(payload.restaurant_name);
@@ -224,7 +248,7 @@ export async function POST(req: Request) {
       ...(sourceUrl ? { source_url: sourceUrl } : {}),
       ...(imageUrl ? { image_url: imageUrl } : {}),
       ...(geo ? { address: geo.address, lat: geo.lat, lng: geo.lng } : {}),
-      ...(payload.hours ? { hours: payload.hours } : {}),
+      ...(hoursToStore ? { hours: hoursToStore } : {}),
       status: "approved", // publishes immediately; votes are the quality gate
       submitter_ip_hash: createHash("sha256").update(key).digest("hex").slice(0, 16),
     })
@@ -236,8 +260,100 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Could not save submission." }, { status: 502 });
   }
 
+  // Chains: one listing per physical location, and a happy hour posted for
+  // the brand is assumed to apply at every location until voted otherwise.
+  // Best-effort — a sync hiccup must never sink the submission itself.
+  const extraSlugs: string[] = [];
+  try {
+    const ipHash = createHash("sha256").update(key).digest("hex").slice(0, 16);
+    const baseName = matched?.name ?? payload.restaurant_name;
+    const baseSlug = slugifyName(baseName);
+    const self = matched ?? allSpots.find((s) => s.slug === slug) ?? null;
+    const siblings = allSpots.filter(
+      (s) => s.slug !== slug && slugifyName(s.name) === baseSlug,
+    );
+    const dbDeals = (ds: { item: string; price: string | null; category: string; description?: string | null; days?: string[] | null; photo_path?: string | null; photoPath?: string | null }[]) =>
+      ds.map((d) => ({
+        item: d.item,
+        price: d.price,
+        category: d.category,
+        description: d.description ?? null,
+        ...(d.days && d.days.length > 0 ? { days: d.days } : {}),
+        ...(d.photo_path || d.photoPath ? { photo_path: d.photo_path ?? d.photoPath } : {}),
+      }));
+    // The freshest known menu/window for this brand — the payload when it
+    // carries deals, otherwise whatever the matched spot currently shows.
+    const version =
+      payload.deals.length > 0
+        ? { days: payload.days, start: payload.start, end: payload.end, deals: dbDeals(payload.deals) }
+        : self && self.deals.length > 0
+          ? { days: self.days, start: self.start, end: self.end, deals: dbDeals(self.deals) }
+          : null;
+
+    // 1) Mirror fresh deals onto the brand's existing sibling listings.
+    if (payload.deals.length > 0) {
+      for (const sib of siblings) {
+        const { error: e } = await db.from("submissions").insert({
+          restaurant_name: sib.name,
+          neighborhood: sib.neighborhood,
+          days: payload.days,
+          start_time: payload.start,
+          end_time: payload.end,
+          deals: dbDeals(payload.deals),
+          photo_path: photoPaths[0] ?? null,
+          ...(photoPaths.length > 1 ? { photo_paths: photoPaths } : {}),
+          spot_slug: sib.slug,
+          ...(sourceUrl ? { source_url: sourceUrl } : {}),
+          ...(imageUrl ? { image_url: imageUrl } : {}),
+          status: "approved",
+          submitter_ip_hash: ipHash,
+        });
+        if (e) console.error("sibling mirror failed:", sib.slug, e.message);
+        else extraSlugs.push(sib.slug);
+      }
+    }
+
+    // 2) Locations Google knows that we don't have listings for yet.
+    if (version && locs.length > 1) {
+      const covered = [self, ...siblings].filter((s): s is NonNullable<typeof s> => !!s);
+      for (const loc of locs) {
+        if (geo && near({ lat: geo.lat, lng: geo.lng }, loc)) continue; // the primary insert
+        if (covered.some((s) => near(s, loc))) continue;
+        const streetSlug = slugifyName(loc.address.split(",")[0] ?? "").slice(0, 40);
+        const sibSlug = streetSlug ? `${baseSlug}-${streetSlug}` : baseSlug;
+        if (sibSlug === slug || sibSlug === baseSlug) continue;
+        if (allSpots.some((s) => s.slug === sibSlug) || extraSlugs.includes(sibSlug)) continue;
+        const hood = loc.neighborhood ?? (await reverseNeighborhood(loc.lat, loc.lng));
+        const { error: e } = await db.from("submissions").insert({
+          restaurant_name: baseName,
+          neighborhood: hood,
+          days: version.days,
+          start_time: version.start,
+          end_time: version.end,
+          deals: version.deals,
+          photo_path: photoPaths[0] ?? null,
+          ...(photoPaths.length > 1 ? { photo_paths: photoPaths } : {}),
+          spot_slug: sibSlug,
+          ...(sourceUrl ? { source_url: sourceUrl } : {}),
+          ...(imageUrl ? { image_url: imageUrl } : {}),
+          address: loc.address,
+          lat: loc.lat,
+          lng: loc.lng,
+          ...(loc.hoursByDay ? { hours: loc.hoursByDay } : {}),
+          status: "approved",
+          submitter_ip_hash: ipHash,
+        });
+        if (e) console.error("sibling location insert failed:", sibSlug, e.message);
+        else extraSlugs.push(sibSlug);
+      }
+    }
+  } catch (e) {
+    console.error("sibling sync failed:", e instanceof Error ? e.message : e);
+  }
+
   // Live right away — no waiting on the 5-minute ISR window.
   revalidatePath("/");
   revalidatePath(`/r/${slug}`);
-  return NextResponse.json({ stored: true, id: data.id, slug });
+  for (const s of extraSlugs) revalidatePath(`/r/${s}`);
+  return NextResponse.json({ stored: true, id: data.id, slug, siblings: extraSlugs });
 }
