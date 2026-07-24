@@ -3,6 +3,11 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.6.2 — 2026-07-23
+
+- Menu photos moved to the top of the restaurant page (above the deals),
+  cropped to a tidy preview — tap opens full size.
+
 ## 1.6.1 — 2026-07-23
 
 - Extraction also preserves calendar limits ("valid through 8/31",

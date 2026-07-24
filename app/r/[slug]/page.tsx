@@ -104,6 +104,44 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
         </p>
       )}
 
+      {photos.length > 0 && (
+        <section>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-2xl font-semibold text-ink">
+              The menu{photos.length > 1 ? "s" : ""}
+            </h2>
+            <Link
+              href={`/submit?spot=${spot.slug}`}
+              className="shrink-0 rounded-full border border-line bg-surface px-4 py-1.5 text-sm text-ink transition-colors hover:text-primary"
+            >
+              📸 Update this happy hour
+            </Link>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {photos.map((url, i) => (
+              <figure
+                key={i}
+                className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm"
+              >
+                <a href={url} target="_blank" rel="noopener noreferrer" title="Open full size">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`Happy hour menu at ${spot.name}`}
+                    className="max-h-96 w-full object-cover object-top"
+                  />
+                </a>
+                {spot.addedAt && i === 0 && (
+                  <figcaption className="px-4 py-2.5 text-xs text-muted">
+                    Snapped {formatDate(spot.addedAt)} — tap to view full size.
+                  </figcaption>
+                )}
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section>
         <h2 className="font-display text-2xl font-semibold text-ink">The deals</h2>
         <p className="mt-1 text-xs text-muted">
@@ -156,40 +194,7 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
         </div>
       </section>
 
-      {photos.length > 0 ? (
-        <section>
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="font-display text-2xl font-semibold text-ink">
-              Menu snapshot{photos.length > 1 ? "s" : ""}
-            </h2>
-            <Link
-              href={`/submit?spot=${spot.slug}`}
-              className="shrink-0 rounded-full border border-line bg-surface px-4 py-1.5 text-sm text-ink transition-colors hover:text-primary"
-            >
-              📸 Update this happy hour
-            </Link>
-          </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {photos.map((url, i) => (
-              <figure
-                key={i}
-                className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm"
-              >
-                <a href={url} target="_blank" rel="noopener noreferrer">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Happy hour menu at ${spot.name}`} className="w-full" />
-                </a>
-                {spot.addedAt && i === 0 && (
-                  <figcaption className="px-4 py-2.5 text-xs text-muted">
-                    Snapped {formatDate(spot.addedAt)} — deals above come from{" "}
-                    {photos.length > 1 ? "these menus" : "this menu"}.
-                  </figcaption>
-                )}
-              </figure>
-            ))}
-          </div>
-        </section>
-      ) : (
+      {photos.length === 0 && (
         <section className="rounded-2xl border-2 border-dashed border-line bg-surface p-6 text-center">
           <p className="font-display text-lg text-ink">Been here lately? 📸</p>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted">
