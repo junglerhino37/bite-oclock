@@ -3,6 +3,11 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.17.1 — 2026-07-24
+
+- Map pins are Monet medallions too — the painting is the pin, with the
+  amber live ring preserved.
+
 ## 1.17.0 — 2026-07-24
 
 - **Chains get every location.** When Google knows several Houston locations

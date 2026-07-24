@@ -7,6 +7,7 @@ import Link from "next/link";
 import type { Spot } from "@/lib/types";
 import { CATEGORIES } from "@/lib/categories";
 import { formatTimeRange, isLiveNow } from "@/lib/spots";
+import CategoryIcon from "./CategoryIcon";
 
 const HOUSTON = { longitude: -95.39, latitude: 29.755, zoom: 11.4 };
 
@@ -43,15 +44,21 @@ export default function MapView({ spots }: { spots: Spot[] }) {
             >
               <button
                 aria-label={spot.name}
-                className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white text-base shadow-md transition-transform hover:scale-110 ${
+                className={`flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 shadow-md transition-transform hover:scale-110 ${
                   live ? "live-dot" : ""
                 }`}
                 style={{
-                  background: live ? "var(--accent)" : "var(--primary)",
+                  // Live spots get the amber ring; the painting is the pin.
+                  borderColor: live ? "var(--accent)" : "#fff",
+                  background: meta.color,
                   transitionTimingFunction: "var(--ease-spring)",
                 }}
               >
-                {meta.emoji}
+                <CategoryIcon
+                  category={spot.deals[0]?.category ?? "barfood"}
+                  size={34}
+                  className="h-full w-full"
+                />
               </button>
             </Marker>
           );
