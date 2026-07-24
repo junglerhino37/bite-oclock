@@ -3,6 +3,14 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.10.2 — 2026-07-24
+
+- Fix "Network error" on Read the menu: phone camera shots exceeded the
+  host's 4.5 MB upload limit (413 before our code ran). Photos now
+  compress in the browser before upload (≤2000px jpeg) — which also
+  bakes in rotation and strips GPS metadata on-device — and a 413 that
+  still slips through gets a clear message instead of "network error".
+
 ## 1.10.1 — 2026-07-24
 
 - Address lookup speaks human: "bambolinos on westheimer" now resolves —

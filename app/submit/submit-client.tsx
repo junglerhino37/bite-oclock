@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Extraction } from "@/lib/ai/schemas";
 import { CATEGORIES, CATEGORY_KEYS, type Category } from "@/lib/categories";
+import { compressImage } from "@/lib/image";
 import { bestAddressMatch, bestNameMatch } from "@/lib/match";
 import { DAYS, DAY_LABELS, type Day } from "@/lib/types";
 
@@ -173,7 +174,7 @@ export default function SubmitClient({
   /** Business hours from OSM, when tagged — bounds "all day" deals. */
   const [knownHours, setKnownHours] = useState<{ start: string; end: string } | null>(null);
 
-  function addPhotos(list: FileList) {
+  async function addPhotos(list: FileList) {
     setError(null);
     const incoming = [...list];
     const room = MAX_PHOTOS - photos.length;
@@ -186,11 +187,13 @@ export default function SubmitClient({
         setError("One of those files doesn't look like an image.");
         continue;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        setError("10 MB max per photo — that one's too big.");
+      // Downscales below upload limits, fixes rotation, strips GPS metadata.
+      const prepped = await compressImage(file);
+      if (prepped.size > 4 * 1024 * 1024) {
+        setError("That photo couldn't be shrunk enough to upload — try a different shot.");
         continue;
       }
-      accepted.push(file);
+      accepted.push(prepped);
     }
     if (accepted.length === 0) return;
     setPhotos((p) => [...p, ...accepted]);
@@ -230,9 +233,14 @@ export default function SubmitClient({
         form.append("photo", photos[i]);
         if (hint.trim()) form.append("hint", hint.trim());
         const res = await fetch("/api/extract", { method: "POST", body: form });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error ?? "Couldn't read the menu — your photos are still here.");
+        if (res.status === 413) {
+          setError("That photo is too large to upload — remove it and try a fresh shot.");
+          setStage("gather");
+          return;
+        }
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data) {
+          setError(data?.error ?? "Couldn't read the menu — your photos are still here.");
           setStage("gather");
           return;
         }

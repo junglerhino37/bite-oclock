@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Day, Deal, VoteSummary } from "@/lib/types";
 import { DAYS, DAY_LABELS } from "@/lib/types";
 import { CATEGORIES, CATEGORY_KEYS, type Category } from "@/lib/categories";
+import { compressImage } from "@/lib/image";
 import VerifyButtons from "./VerifyButtons";
 
 const inputCls =
@@ -130,7 +131,10 @@ export default function DealRow({
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                setPhoto(f ? await compressImage(f, 1600) : null);
+              }}
             />
           </label>
         </div>
