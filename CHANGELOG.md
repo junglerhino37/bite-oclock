@@ -3,6 +3,19 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.9.0 — 2026-07-23
+
+- **Submit flow redesigned around the human.** Photos stage first (add,
+  remove, reorder your shots — nothing reads until you tap "Read the
+  menu"), with an instructions box for context the photo can't give
+  ("this is Rudyard's", "left page only") that feeds the AI reader.
+- **Positive place ID before publish.** The reader may no longer guess a
+  restaurant name (visible-on-menu or submitter-stated only). On review,
+  the flow asks its follow-up: "Found X at ADDRESS — is that the one?"
+  with ✓/✗; no confirmed identity, no publish button.
+- Anti-hallucination extraction rules: unreadable lines are skipped, each
+  dish is categorized item-by-item.
+
 ## 1.8.2 — 2026-07-23
 
 - Single "Add the menu" button (WhatsApp-style): the system sheet offers
