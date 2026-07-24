@@ -699,13 +699,13 @@ export default function SubmitClient({
                     value={deal.item}
                     onChange={(e) => setDeal(i, { item: e.target.value })}
                     placeholder="Dish"
-                    className={inputCls}
+                    className={`${inputCls} min-w-0 flex-1`}
                   />
                   <input
                     value={deal.price}
                     onChange={(e) => setDeal(i, { price: e.target.value })}
                     placeholder="$"
-                    className={`${inputCls} w-24 shrink-0`}
+                    className="w-24 shrink-0 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none"
                   />
                   <button
                     type="button"

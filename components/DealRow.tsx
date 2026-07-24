@@ -80,12 +80,17 @@ export default function DealRow({
     return (
       <li className="space-y-2 rounded-2xl border border-primary/50 bg-surface p-4 shadow-sm">
         <div className="flex gap-2">
-          <input value={item} onChange={(e) => setItem(e.target.value)} placeholder="Dish" className={inputCls} />
+          <input
+            value={item}
+            onChange={(e) => setItem(e.target.value)}
+            placeholder="Dish"
+            className={`${inputCls} min-w-0 flex-1`}
+          />
           <input
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="$"
-            className={`${inputCls} w-24 shrink-0`}
+            className="w-24 shrink-0 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none"
           />
         </div>
         <input

@@ -3,6 +3,16 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.11.1 — 2026-07-24
+
+- **Fix the "empty dish names" saga for real.** It was never OCR: a
+  Tailwind class conflict (w-full beating w-24 in stylesheet order) made
+  the price input claim the whole row unshrinkably, crushing the dish
+  input to a 26px sliver — the names were extracted and present all
+  along. Price inputs now carry explicit non-conflicting classes; dish
+  inputs get flex-1 min-w-0.
+- License attributed to Christopher Rouxel (MIT).
+
 ## 1.11.0 — 2026-07-24
 
 - **Confirming the place pays off instantly**: if the menu never stated

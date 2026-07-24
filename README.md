@@ -108,4 +108,4 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md). Be kind, keep it Houston.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © 2026 Christopher Rouxel
