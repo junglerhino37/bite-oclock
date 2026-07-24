@@ -260,29 +260,27 @@ export default function SubmitClient({
       </header>
 
       {stage === "pick" && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block cursor-pointer rounded-3xl border-2 border-dashed border-line bg-surface p-8 text-center transition-colors hover:border-primary">
-            <span className="text-5xl">📷</span>
-            <p className="font-display mt-3 text-lg text-ink">Snap the menu now</p>
-            <p className="mt-1 text-xs text-muted">Opens your camera</p>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => e.target.files && onFiles(e.target.files)}
-            />
-          </label>
-          <label className="block cursor-pointer rounded-3xl border-2 border-dashed border-line bg-surface p-8 text-center transition-colors hover:border-primary">
-            <span className="text-5xl">🖼️</span>
-            <p className="font-display mt-3 text-lg text-ink">From your photos</p>
+        <div>
+          <label className="block cursor-pointer rounded-3xl border-2 border-dashed border-line bg-surface p-10 text-center transition-colors hover:border-primary">
+            <span className="text-5xl">📸</span>
+            <p className="font-display mt-3 text-lg text-ink">Add the menu</p>
             <p className="mt-1 text-xs text-muted">
-              Up to {MAX_PHOTOS} (front + back, both pages…) · 10 MB each
+              Camera or camera roll · up to {MAX_PHOTOS} photos · 10 MB each
             </p>
             <input
               type="file"
               accept="image/*"
               multiple
+              className="hidden"
+              onChange={(e) => e.target.files && onFiles(e.target.files)}
+            />
+          </label>
+          <label className="mt-2 block cursor-pointer text-center text-xs text-muted underline decoration-line underline-offset-4 hover:text-ink">
+            camera didn&rsquo;t show up? open it directly
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
               className="hidden"
               onChange={(e) => e.target.files && onFiles(e.target.files)}
             />

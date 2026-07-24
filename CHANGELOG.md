@@ -3,6 +3,12 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.8.2 — 2026-07-23
+
+- Single "Add the menu" button (WhatsApp-style): the system sheet offers
+  camera and camera roll together; a small fallback link opens the camera
+  directly on devices whose picker hides it.
+
 ## 1.8.1 — 2026-07-23
 
 - Submit screen offers "📷 Snap the menu now" (launches the camera via
