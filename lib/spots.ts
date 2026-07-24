@@ -96,13 +96,36 @@ function toMinutes(hhmm: string): number {
   return h * 60 + m;
 }
 
+/** Today's window: day-accurate hours win over the flat start/end.
+ * Returns null when the spot isn't running today (or has no times). */
+export function todayWindow(
+  spot: Spot,
+  now: Date = new Date(),
+): { start: string; end: string | null } | null {
+  const { day } = houstonNow(now);
+  const h = spot.hoursByDay?.[day];
+  if (h) return h;
+  if (spot.hoursByDay) return null; // day-accurate and closed today
+  if (!spot.days.includes(day) && spot.days.length > 0) return null;
+  if (!spot.start) return null;
+  return { start: spot.start, end: spot.end };
+}
+
 export function isLiveNow(spot: Spot, now: Date = new Date()): boolean {
-  if (!spot.start) return false;
-  const { day, minutes } = houstonNow(now);
-  if (!spot.days.includes(day)) return false;
+  const w = todayWindow(spot, now);
+  if (!w) return false;
+  const { minutes } = houstonNow(now);
   // Open-ended windows ("specials after 4 PM") run until close of day.
-  const end = spot.end ? toMinutes(spot.end) : 24 * 60;
-  return minutes >= toMinutes(spot.start) && minutes < end;
+  const end = w.end ? toMinutes(w.end) : 24 * 60;
+  return minutes >= toMinutes(w.start) && minutes < end;
+}
+
+/** Display string for TODAY — "8 AM–10 PM" from day-accurate hours when
+ * available, else the flat range; "closed today" when day-accurate says so. */
+export function displayTimeRange(spot: Spot, now: Date = new Date()): string {
+  if (!spot.hoursByDay) return formatTimeRange(spot);
+  const w = todayWindow(spot, now);
+  return w ? `today ${formatTimeRange(w)}` : "closed today";
 }
 
 export function formatTimeRange(spot: { start: string | null; end: string | null }): string {

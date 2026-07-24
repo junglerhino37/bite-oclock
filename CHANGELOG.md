@@ -3,6 +3,18 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.14.0 — 2026-07-24
+
+- **Day-accurate business hours.** Google's per-day periods flow through
+  the whole stack (submissions.hours jsonb, migration 0009): spot pages
+  show a day-by-day hours table, cards and bubbles use *today's* window
+  ("today 8 AM–10 PM" / "closed today"), and liveness math respects that
+  Fridays differ from Mondays.
+- **Camera button is back and guaranteed** — "📷 Snap the menu" (direct
+  capture) beside "🖼 Camera roll", in both the empty state and the +
+  tiles, since Android's combined picker can't be trusted to offer the
+  camera.
+
 ## 1.13.0 — 2026-07-24
 
 - **"Take me there" taps are counted** (site_stats key `nav`, fired

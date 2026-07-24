@@ -1,7 +1,7 @@
 import "server-only";
 import { getServiceDb, UPLOADS_BUCKET } from "./db";
 import { getSpots } from "./spots";
-import type { Day, Deal, Spot, SpotVersion, VoteSummary } from "./types";
+import type { Day, DayHours, Deal, Spot, SpotVersion, VoteSummary } from "./types";
 import { DAYS } from "./types";
 import { isCategory } from "./categories";
 
@@ -32,6 +32,7 @@ interface SubRow {
   spot_slug?: string | null;
   source_url?: string | null;
   image_url?: string | null;
+  hours?: unknown;
   address?: string | null;
   lat?: number | null;
   lng?: number | null;
@@ -61,6 +62,21 @@ function parseDeals(raw: unknown, urlFor?: (path: string) => string | null): Dea
 
 function parseDays(raw: unknown): Day[] {
   return (Array.isArray(raw) ? raw : []).filter((d): d is Day => DAYS.includes(d as Day));
+}
+
+function parseHoursByDay(raw: unknown): Partial<Record<Day, DayHours>> | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const out: Partial<Record<Day, DayHours>> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!DAYS.includes(k as Day)) continue;
+    const h = v as { start?: unknown; end?: unknown };
+    if (typeof h?.start !== "string" || !/^\d{2}:\d{2}/.test(h.start)) continue;
+    out[k as Day] = {
+      start: h.start.slice(0, 5),
+      end: typeof h.end === "string" && /^\d{2}:\d{2}/.test(h.end) ? h.end.slice(0, 5) : null,
+    };
+  }
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 interface VoteRow {
@@ -102,7 +118,8 @@ export async function getAllSpots(): Promise<Spot[]> {
   if (!db) return seed;
 
   const newCols = ", photo_paths, note, spot_slug, source_url, image_url, address, lat, lng";
-  const subCols = `id, restaurant_name, neighborhood, days, start_time, end_time, deals, photo_path${newCols}, created_at`;
+  const newestCols = ", hours";
+  const subCols = `id, restaurant_name, neighborhood, days, start_time, end_time, deals, photo_path${newCols}${newestCols}, created_at`;
   const fetchSubs = (cols: string) =>
     db
       .from("submissions")
@@ -115,8 +132,12 @@ export async function getAllSpots(): Promise<Spot[]> {
     }>;
   let subsRes = await fetchSubs(subCols);
   if (subsRes.error) {
-    // Instance predates migrations 0003/0004 — degrade gracefully.
-    subsRes = await fetchSubs(subCols.replace(newCols, ""));
+    // Instance predates migration 0009 — retry without the newest column…
+    subsRes = await fetchSubs(subCols.replace(newestCols, ""));
+  }
+  if (subsRes.error) {
+    // …or predates 0003/0004 entirely — degrade to the original columns.
+    subsRes = await fetchSubs(subCols.replace(newCols, "").replace(newestCols, ""));
   }
   if (subsRes.error || !subsRes.data) {
     if (subsRes.error) console.error("live spots query failed:", subsRes.error.message);
@@ -198,6 +219,8 @@ export async function getAllSpots(): Promise<Spot[]> {
     const geocoded = [...rows]
       .reverse()
       .find((r) => typeof r.lat === "number" && typeof r.lng === "number");
+    const latestDayHours =
+      [...rows].reverse().map((r) => parseHoursByDay(r.hours)).find((h) => h !== null) ?? null;
     const latestAddress = [...rows].reverse().find((r) => r.address)?.address ?? null;
     const latestSub = rows[rows.length - 1];
     const neighborhood =
@@ -221,6 +244,7 @@ export async function getAllSpots(): Promise<Spot[]> {
       notes: base?.notes ?? (rows.length > 0 ? "Community-submitted from a menu photo." : null),
       photoUrls: latestPhotos,
       imageUrl: latestImage,
+      hoursByDay: latestDayHours,
       communityNote: current.note,
       addedAt: current.source === "community" ? current.addedAt : null,
       history: versions.slice(0, -1).reverse(),

@@ -51,6 +51,9 @@ export interface Spot {
   photoUrls?: string[];
   /** Preview image scraped from the spot's linked happy-hour page (og:image). */
   imageUrl?: string | null;
+  /** Day-accurate windows (business hours for all-day deals) — when present,
+   * they override start/end for that day. Days differ; Fridays exist. */
+  hoursByDay?: Partial<Record<Day, DayHours>> | null;
   /** Submitter note on the current version ("cash only", "patio only"…). */
   communityNote?: string | null;
   /** When the current version of this listing was added (ISO, community only). */
@@ -63,6 +66,12 @@ export interface Spot {
 
 export function verificationKey(kind: "deal" | "hours", target: string): string {
   return kind === "hours" ? "hours" : `deal:${target}`;
+}
+
+/** One day's operating window — end null means open-ended (till close). */
+export interface DayHours {
+  start: string;
+  end: string | null;
 }
 
 /** Aggregated community votes for one target ('hours' or a deal item). */

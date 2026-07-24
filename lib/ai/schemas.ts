@@ -62,6 +62,18 @@ export const SubmissionSchema = z.object({
   days: z.array(dayEnum).max(7),
   start: hhmm,
   end: hhmm,
+  /** Day-accurate windows (business hours for all-day deals). Keys mon..sun;
+   * missing day = closed that day. Overrides start/end where present. */
+  hours: z
+    .record(
+      dayEnum,
+      z.object({
+        start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+        end: hhmm,
+      }),
+    )
+    .nullable()
+    .optional(),
   deals: z
     .array(
       z.object({

@@ -1,4 +1,5 @@
 import "server-only";
+import type { Day, DayHours } from "./types";
 
 /** OpenStreetMap Nominatim lookup (identified UA, one call per action, per
  * usage policy). Results outside greater Houston are discarded — a wrong pin
@@ -12,7 +13,11 @@ export interface GeoResult {
   /** OSM opening_hours string when tagged (e.g. "Mo-Su 11:00-21:00") —
    * lets "all day" deals bound themselves to the business's real hours. */
   openingHours: string | null;
+  /** Day-accurate hours (Google only) — businesses open later on Fridays. */
+  hoursByDay: Partial<Record<Day, DayHours>> | null;
 }
+
+const GOOGLE_DAYS: Day[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
 export async function geocodeQuery(query: string): Promise<GeoResult | null> {
   try {
@@ -45,6 +50,7 @@ export async function geocodeQuery(query: string): Promise<GeoResult | null> {
       lng,
       neighborhood: neighborhood?.slice(0, 60) ?? null,
       openingHours: hit.extratags?.opening_hours?.slice(0, 120) ?? null,
+      hoursByDay: null,
     };
   } catch {
     return null;
@@ -77,8 +83,8 @@ async function googlePlaces(query: string): Promise<GeoResult | null> {
         location?: { latitude: number; longitude: number };
         regularOpeningHours?: {
           periods?: {
-            open?: { hour?: number; minute?: number };
-            close?: { hour?: number; minute?: number };
+            open?: { day?: number; hour?: number; minute?: number };
+            close?: { day?: number; hour?: number; minute?: number };
           }[];
         };
       }[];
@@ -92,21 +98,40 @@ async function googlePlaces(query: string): Promise<GeoResult | null> {
       .replace(/, (USA|United States)$/, "")
       .slice(0, 160);
     let openingHours: string | null = null;
+    let hoursByDay: Partial<Record<Day, DayHours>> | null = null;
     const periods = p.regularOpeningHours?.periods;
     if (Array.isArray(periods) && periods.length > 0) {
+      const f = (h?: number, m?: number) =>
+        `${String(h ?? 0).padStart(2, "0")}:${String(m ?? 0).padStart(2, "0")}`;
       let open = 24 * 60;
       let close = 0;
+      hoursByDay = {};
       for (const per of periods) {
-        if (per.open) open = Math.min(open, (per.open.hour ?? 0) * 60 + (per.open.minute ?? 0));
+        if (!per.open) continue;
+        const day = GOOGLE_DAYS[per.open.day ?? -1];
+        const start = f(per.open.hour, per.open.minute);
+        // Past-midnight closes clamp to end-of-day; our windows are per-day.
+        const sameDay = per.close?.day === per.open.day;
+        const end = per.close ? (sameDay ? f(per.close.hour, per.close.minute) : "23:59") : null;
+        if (day && !hoursByDay[day]) hoursByDay[day] = { start, end };
+        open = Math.min(open, (per.open.hour ?? 0) * 60 + (per.open.minute ?? 0));
         if (per.close) close = Math.max(close, (per.close.hour ?? 0) * 60 + (per.close.minute ?? 0));
       }
+      if (Object.keys(hoursByDay).length === 0) hoursByDay = null;
       if (close > open) {
-        const f = (m: number) =>
+        const g = (m: number) =>
           `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-        openingHours = `${f(open)}-${f(close)}`;
+        openingHours = `${g(open)}-${g(close)}`;
       }
     }
-    return { address: address || `${lat}, ${lng}`, lat, lng, neighborhood: null, openingHours };
+    return {
+      address: address || `${lat}, ${lng}`,
+      lat,
+      lng,
+      neighborhood: null,
+      openingHours,
+      hoursByDay,
+    };
   } catch {
     return null;
   }

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getSpots, formatTimeRange, isDealStale } from "@/lib/spots";
+import { getSpots, displayTimeRange, formatTimeRange, isDealStale } from "@/lib/spots";
 import { getAllSpots, getAnySpot } from "@/lib/live";
 import { CATEGORIES } from "@/lib/categories";
 import { DAYS, DAY_LABELS, verificationKey } from "@/lib/types";
@@ -71,7 +71,7 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
         <div className="relative mt-4 flex flex-wrap items-center gap-2">
           <LiveNow spot={spot} />
           <span className="font-data rounded-full bg-surface/90 px-3 py-1 text-sm text-ink shadow-sm">
-            {formatTimeRange(spot)}
+            {displayTimeRange(spot)}
           </span>
           {spot.sourceUrl && (
             <a
@@ -184,10 +184,33 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
               {DAY_LABELS[d]}
             </span>
           ))}
-          <span className="font-data rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm text-ink">
-            {formatTimeRange(spot)}
-          </span>
+          {!spot.hoursByDay && (
+            <span className="font-data rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm text-ink">
+              {formatTimeRange(spot)}
+            </span>
+          )}
         </div>
+        {spot.hoursByDay && (
+          <div className="mt-3 grid max-w-sm gap-1">
+            {DAYS.map((d) => {
+              const h = spot.hoursByDay?.[d];
+              return (
+                <div
+                  key={d}
+                  className="font-data flex items-baseline justify-between rounded-lg px-3 py-1 text-sm odd:bg-sunken/50"
+                >
+                  <span className="text-muted">{DAY_LABELS[d]}</span>
+                  <span className={h ? "text-ink" : "text-muted line-through decoration-line"}>
+                    {h ? formatTimeRange(h) : "closed"}
+                  </span>
+                </div>
+              );
+            })}
+            <p className="mt-0.5 text-xs text-muted">
+              All-day deal — runs the business&rsquo;s posted hours.
+            </p>
+          </div>
+        )}
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <VerifyButtons
             slug={spot.slug}

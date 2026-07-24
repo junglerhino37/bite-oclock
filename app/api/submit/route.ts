@@ -224,6 +224,7 @@ export async function POST(req: Request) {
       ...(sourceUrl ? { source_url: sourceUrl } : {}),
       ...(imageUrl ? { image_url: imageUrl } : {}),
       ...(geo ? { address: geo.address, lat: geo.lat, lng: geo.lng } : {}),
+      ...(payload.hours ? { hours: payload.hours } : {}),
       status: "approved", // publishes immediately; votes are the quality gate
       submitter_ip_hash: createHash("sha256").update(key).digest("hex").slice(0, 16),
     })

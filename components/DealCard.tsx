@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Spot } from "@/lib/types";
 import { DAY_LABELS } from "@/lib/types";
 import { CATEGORIES } from "@/lib/categories";
-import { formatTimeRange, isDealStale, isLiveNow, latestVerifiedAt } from "@/lib/spots";
+import { displayTimeRange, isDealStale, isLiveNow, latestVerifiedAt } from "@/lib/spots";
 import { timeAgo } from "@/lib/format";
 
 /** Photo-forward deal card. Until a spot has real dish photos, the header is a
@@ -73,7 +73,7 @@ export default function DealCard({
           </span>
         )}
         <span className="font-data absolute bottom-3 right-3 rounded-full bg-surface/90 px-2.5 py-1 text-xs font-medium text-ink shadow-sm">
-          {spot.days.map((d) => DAY_LABELS[d]).join(" ")} · {formatTimeRange(spot)}
+          {spot.days.map((d) => DAY_LABELS[d]).join(" ")} · {displayTimeRange(spot)}
         </span>
       </div>
       <div className="space-y-2 p-4">

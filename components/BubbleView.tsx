@@ -13,11 +13,12 @@ import Link from "next/link";
 import type { Spot } from "@/lib/types";
 import { CATEGORIES } from "@/lib/categories";
 import {
-  formatTimeRange,
+  displayTimeRange,
   houstonNow,
   latestVerifiedAt,
   minDealPrice,
   spotDistanceMiles,
+  todayWindow,
   type LatLng,
 } from "@/lib/spots";
 import { timeAgo } from "@/lib/format";
@@ -59,18 +60,23 @@ function fmtTime(hhmm: string): string {
 
 function statusOf(spot: Spot, now: Date): { status: Status; timeLabel: string; frac: number } {
   const { day, minutes } = houstonNow(now);
-  const dealToday = spot.deals.some((d) => d.days?.includes(day));
-  if (!spot.days.includes(day) && !dealToday)
-    return { status: "off", timeLabel: "not today", frac: 0 };
-  if (!spot.start) return { status: "unknown", timeLabel: "hours vary", frac: 0 };
-  const s = toMin(spot.start);
+  const w = todayWindow(spot, now);
+  if (!w) {
+    const dealToday = spot.deals.some((d) => d.days?.includes(day));
+    if (spot.hoursByDay && !spot.hoursByDay[day])
+      return { status: "off", timeLabel: "closed today", frac: 0 };
+    if (!spot.days.includes(day) && !dealToday)
+      return { status: "off", timeLabel: "not today", frac: 0 };
+    return { status: "unknown", timeLabel: "hours vary", frac: 0 };
+  }
+  const s = toMin(w.start);
   // Open-ended windows ("after 4 PM") run until close of day.
-  const e = spot.end ? toMin(spot.end) : 24 * 60;
-  if (minutes < s) return { status: "soon", timeLabel: `starts ${fmtTime(spot.start)}`, frac: 0 };
+  const e = w.end ? toMin(w.end) : 24 * 60;
+  if (minutes < s) return { status: "soon", timeLabel: `starts ${fmtTime(w.start)}`, frac: 0 };
   if (minutes >= e) return { status: "done", timeLabel: "done today", frac: 0 };
   return {
     status: "live",
-    timeLabel: spot.end ? `ends ${fmtTime(spot.end)}` : `since ${fmtTime(spot.start)}`,
+    timeLabel: w.end ? `ends ${fmtTime(w.end)}` : `since ${fmtTime(w.start)}`,
     frac: Math.max(0.04, (e - minutes) / Math.max(1, e - s)),
   };
 }
@@ -427,7 +433,7 @@ export default function BubbleView({
                 {selectedMeta?.timeLabel}
               </span>
             )}
-            <span className="font-data text-xs text-muted">{formatTimeRange(selected)}</span>
+            <span className="font-data text-xs text-muted">{displayTimeRange(selected)}</span>
             {selectedDist !== null && (
               <span className="font-data text-xs text-muted">📍 {selectedDist.toFixed(1)} mi</span>
             )}

@@ -39,6 +39,8 @@ interface Draft {
   /** Whether the menu itself stated times — if not, confirming the place
    * adopts the business's posted hours on the spot. */
   timesFromMenu: boolean;
+  /** Day-accurate business hours (Google) riding with an all-day deal. */
+  hoursByDay: Record<string, { start: string; end: string | null }> | null;
   deals: EditableDeal[];
   /** Public note shown on the listing. */
   note: string;
@@ -144,6 +146,7 @@ function draftFromExtractions(extractions: Extraction[], targetName?: string): D
     end: withTimes?.start && !withTimes.end ? "" : withTimes?.end || "18:00",
     allDay: false,
     timesFromMenu: !!withTimes,
+    hoursByDay: null,
     deals: deals.map((d) => ({
       item: d.item,
       price: d.price ?? "",
@@ -185,16 +188,26 @@ export default function SubmitClient({
   const [placeConfirmed, setPlaceConfirmed] = useState(false);
   const [looking, setLooking] = useState(false);
   const [useMatch, setUseMatch] = useState(true);
-  /** Business hours from OSM, when tagged — bounds "all day" deals. */
+  /** Business hours (envelope + day-accurate) — bounds "all day" deals. */
   const [knownHours, setKnownHours] = useState<{ start: string; end: string } | null>(null);
+  const [knownHoursByDay, setKnownHoursByDay] = useState<Record<
+    string,
+    { start: string; end: string | null }
+  > | null>(null);
   const [hoursFromPlace, setHoursFromPlace] = useState(false);
 
   /** Confirming the place pays off instantly: if the menu never stated
-   * times, the When card snaps to the business's posted hours right there. */
+   * times, the When card snaps to the business's posted hours right there —
+   * day-accurate when Google knows them. */
   function confirmPlace() {
     setPlaceConfirmed(true);
-    if (knownHours && draft && !draft.timesFromMenu) {
-      setDraft({ ...draft, allDay: true, start: knownHours.start, end: knownHours.end });
+    if ((knownHours || knownHoursByDay) && draft && !draft.timesFromMenu) {
+      setDraft({
+        ...draft,
+        allDay: true,
+        ...(knownHours ? { start: knownHours.start, end: knownHours.end } : {}),
+        hoursByDay: knownHoursByDay,
+      });
       setHoursFromPlace(true);
     }
   }
@@ -314,6 +327,7 @@ export default function SubmitClient({
           setKnownHours(
             data.result.openingHours ? parseOsmHours(data.result.openingHours) : null,
           );
+          setKnownHoursByDay(data.result.hoursByDay ?? null);
         }
       } catch {
         // Lookup is a convenience — silence is fine.
@@ -356,6 +370,7 @@ export default function SubmitClient({
           days: draft.days,
           start: draft.start || null,
           end: draft.end || null,
+          hours: draft.allDay ? draft.hoursByDay : null,
           deals: deals.map((d) => ({
             item: d.item.trim(),
             price: d.price.trim() || null,
@@ -406,27 +421,27 @@ export default function SubmitClient({
       {stage === "gather" && (
         <div className="space-y-4">
           {previews.length === 0 ? (
-            <div>
-              <label className="block cursor-pointer rounded-3xl border-2 border-dashed border-line bg-surface p-10 text-center transition-colors hover:border-primary">
-                <span className="text-5xl">📸</span>
-                <p className="font-display mt-3 text-lg text-ink">Add the menu</p>
-                <p className="mt-1 text-xs text-muted">
-                  Camera or camera roll · up to {MAX_PHOTOS} photos
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => e.target.files && addPhotos(e.target.files)}
-                />
-              </label>
-              <label className="mt-2 block cursor-pointer text-center text-xs text-muted underline decoration-line underline-offset-4 hover:text-ink">
-                camera didn&rsquo;t show up? open it directly
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block cursor-pointer rounded-3xl border-2 border-dashed border-line bg-surface p-8 text-center transition-colors hover:border-primary">
+                <span className="text-5xl">📷</span>
+                <p className="font-display mt-3 text-lg text-ink">Snap the menu</p>
+                <p className="mt-1 text-xs text-muted">Opens the camera</p>
                 <input
                   type="file"
                   accept="image/*"
                   capture="environment"
+                  className="hidden"
+                  onChange={(e) => e.target.files && addPhotos(e.target.files)}
+                />
+              </label>
+              <label className="block cursor-pointer rounded-3xl border-2 border-dashed border-line bg-surface p-8 text-center transition-colors hover:border-primary">
+                <span className="text-5xl">🖼️</span>
+                <p className="font-display mt-3 text-lg text-ink">Camera roll</p>
+                <p className="mt-1 text-xs text-muted">Up to {MAX_PHOTOS} photos</p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={(e) => e.target.files && addPhotos(e.target.files)}
                 />
@@ -453,16 +468,28 @@ export default function SubmitClient({
                   </div>
                 ))}
                 {photos.length < MAX_PHOTOS && (
-                  <label className="flex h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-line text-2xl text-muted transition-colors hover:border-primary hover:text-ink">
-                    +
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => e.target.files && addPhotos(e.target.files)}
-                    />
-                  </label>
+                  <div className="grid h-28 grid-rows-2 gap-2">
+                    <label className="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-line text-sm text-muted transition-colors hover:border-primary hover:text-ink">
+                      + 📷
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={(e) => e.target.files && addPhotos(e.target.files)}
+                      />
+                    </label>
+                    <label className="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-line text-sm text-muted transition-colors hover:border-primary hover:text-ink">
+                      + 🖼️
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => e.target.files && addPhotos(e.target.files)}
+                      />
+                    </label>
+                  </div>
                 )}
               </div>
               <textarea
@@ -689,13 +716,30 @@ export default function SubmitClient({
                 />
               </label>
             </div>
+            {draft.allDay && draft.hoursByDay && (
+              <div className="mt-2 grid max-w-xs gap-0.5">
+                {DAYS.map((d) => {
+                  const h = draft.hoursByDay?.[d];
+                  return (
+                    <div key={d} className="font-data flex justify-between text-xs">
+                      <span className="text-muted">{DAY_LABELS[d]}</span>
+                      <span className={h ? "text-ink" : "text-muted line-through decoration-line"}>
+                        {h ? `${h.start}–${h.end ?? "close"}` : "closed"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {draft.allDay && (
               <p className="mt-2 text-xs text-muted">
-                {hoursFromPlace
-                  ? `⚡ Set from ${draft.restaurant.trim() || "the restaurant"}'s posted hours — double-check them.`
-                  : knownHours
-                    ? "Prefilled from OpenStreetMap's hours for this place — double-check them."
-                    : "Enter the business's open and close times — the deal runs the whole day."}
+                {draft.hoursByDay
+                  ? `⚡ Day-by-day hours from ${draft.restaurant.trim() || "the restaurant"}'s Google listing — double-check them.`
+                  : hoursFromPlace
+                    ? `⚡ Set from ${draft.restaurant.trim() || "the restaurant"}'s posted hours — double-check them.`
+                    : knownHours
+                      ? "Prefilled from OpenStreetMap's hours for this place — double-check them."
+                      : "Enter the business's open and close times — the deal runs the whole day."}
               </p>
             )}
           </div>
