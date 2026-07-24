@@ -3,6 +3,12 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.15.1 — 2026-07-24
+
+- Painterly icons reverted to emoji (they weren't good enough). The
+  drop-in system stays: generate real art per public/icons/README.md,
+  flip one flag in CategoryIcon.
+
 ## 1.15.0 — 2026-07-24
 
 - **License: GPL-3.0-or-later** (was MIT) — copyleft; forks must stay open.

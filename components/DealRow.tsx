@@ -202,7 +202,7 @@ export default function DealRow({
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
               style={{ background: `${meta.color}26` }}
             >
-              <CategoryIcon category={deal.category} size={30} />
+              <CategoryIcon category={deal.category} size={24} />
             </span>
           )}
           <div>

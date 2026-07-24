@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import type { Spot } from "@/lib/types";
 import { CATEGORIES } from "@/lib/categories";
+import CategoryIcon from "./CategoryIcon";
 import {
   displayTimeRange,
   houstonNow,
@@ -386,12 +387,9 @@ export default function BubbleView({
                     transitionDuration: "250ms",
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/icons/${n.spot.deals[0]?.category ?? "barfood"}.svg`}
-                    alt=""
-                    draggable={false}
-                    style={{ width: Math.max(20, n.r * 0.72), height: Math.max(20, n.r * 0.72) }}
+                  <CategoryIcon
+                    category={n.spot.deals[0]?.category ?? "barfood"}
+                    size={Math.max(20, Math.round(n.r * 0.55))}
                   />
                   <span
                     className="px-1 font-medium text-ink"

@@ -3,6 +3,7 @@
 import type { DealFilter, Day } from "@/lib/types";
 import { DAYS, DAY_LABELS } from "@/lib/types";
 import { CATEGORIES, CATEGORY_KEYS, type Category } from "@/lib/categories";
+import CategoryIcon from "./CategoryIcon";
 
 export default function FilterBar({
   filter,
@@ -56,13 +57,7 @@ export default function FilterBar({
                       }
                 }
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/icons/${c}.svg`}
-                  alt=""
-                  className="mr-1 inline h-5 w-5 align-[-4px]"
-                  draggable={false}
-                />
+                <CategoryIcon category={c} size={18} className="mr-1 inline align-[-2px]" />
                 {meta.label}
               </button>
             );
