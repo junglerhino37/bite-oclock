@@ -3,6 +3,20 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.8.0 — 2026-07-23
+
+- **Exact locations only.** New spots must geocode (address or name) or the
+  submission is rejected with a fix-it message; community spots without
+  coordinates stay off the site. All existing spots backfilled.
+- **Take me there launches your maps app** — by name + address, never raw
+  coordinates: Android geo: intent (respects Waze/default), Apple Maps on
+  iOS, Google Maps directions on desktop.
+- **Addresses look themselves up** — type a restaurant name on the review
+  screen (menus often don't print it) and the address auto-fills for
+  confirmation via /api/geocode.
+- **Neighborhoods are derived, never typed** — the input is gone; the
+  geocoder's suburb/neighbourhood fills it in.
+
 ## 1.7.0 — 2026-07-23
 
 - **🧭 Take me there** — a directions button in the restaurant hero that

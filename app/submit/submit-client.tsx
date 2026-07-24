@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Extraction } from "@/lib/ai/schemas";
 import { CATEGORIES, CATEGORY_KEYS, type Category } from "@/lib/categories";
@@ -94,7 +94,30 @@ export default function SubmitClient({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [extractedAddress, setExtractedAddress] = useState<string | null>(null);
+  const [addressAuto, setAddressAuto] = useState(false);
   const [useMatch, setUseMatch] = useState(true);
+
+  /** Menus often don't print the restaurant's name or address — typing the
+   * name is enough: the address looks itself up for confirmation. */
+  useEffect(() => {
+    const name = draft?.restaurant.trim();
+    if (target || stage !== "review" || !name || name.length < 3) return;
+    if (extractedAddress && !addressAuto) return; // never clobber a typed/printed address
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(name)}`);
+        const data = await res.json();
+        if (data.result?.address) {
+          setExtractedAddress(data.result.address);
+          setAddressAuto(true);
+        }
+      } catch {
+        // Lookup is a convenience — silence is fine.
+      }
+    }, 900);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.restaurant, stage, target]);
 
   /** Duplicate guard — one listing per physical restaurant. The address
    * printed on the menu wins; otherwise fuzzy name match ("Boheme" →
@@ -304,22 +327,19 @@ export default function SubmitClient({
                   className={`${inputCls} mt-1`}
                 />
               </label>
-              <label className="block text-xs font-medium uppercase tracking-wide text-muted">
-                Neighborhood <span className="normal-case">(optional)</span>
-                <input
-                  value={draft.neighborhood}
-                  onChange={(e) => setDraft({ ...draft, neighborhood: e.target.value })}
-                  placeholder="Montrose, Heights, EaDo…"
-                  className={`${inputCls} mt-1`}
-                />
-              </label>
               {!target && (
                 <label className="block text-xs font-medium uppercase tracking-wide text-muted">
-                  Address <span className="normal-case">(optional — puts it on the map)</span>
+                  Address{" "}
+                  <span className="normal-case">
+                    {addressAuto ? "📍 found automatically — double-check it" : "(fills in from the name)"}
+                  </span>
                   <input
                     value={extractedAddress ?? ""}
-                    onChange={(e) => setExtractedAddress(e.target.value || null)}
-                    placeholder="1201 St Emanuel St"
+                    onChange={(e) => {
+                      setExtractedAddress(e.target.value || null);
+                      setAddressAuto(false);
+                    }}
+                    placeholder="Looks itself up — or type it"
                     className={`${inputCls} mt-1`}
                   />
                 </label>

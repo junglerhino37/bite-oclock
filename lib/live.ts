@@ -187,6 +187,10 @@ export async function getAllSpots(): Promise<Spot[]> {
     }
     const current = versions[versions.length - 1];
     if (!current || current.deals.length === 0) return null;
+    // Exact locations only: a community-only spot with no coordinates never
+    // made it through geocoding — keep it off the site until it has a pin.
+    const hasGeo = rows.some((r) => typeof r.lat === "number" && typeof r.lng === "number");
+    if (!base && !hasGeo) return null;
     const latestPhotos =
       [...versions].reverse().find((v) => v.photoUrls.length > 0)?.photoUrls ?? [];
     const latestUrl = [...rows].reverse().find((r) => r.source_url)?.source_url ?? null;

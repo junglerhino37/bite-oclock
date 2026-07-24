@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createHash } from "crypto";
 import { SubmissionSchema } from "@/lib/ai/schemas";
 import { getServiceDb, UPLOADS_BUCKET } from "@/lib/db";
+import { geocodeSpot } from "@/lib/geocode";
 import { getAllSpots, slugifyName } from "@/lib/live";
 import { bestNameMatch } from "@/lib/match";
 import { rateLimit, clientKey } from "@/lib/ratelimit";
@@ -65,43 +66,6 @@ async function fetchViaMicrolink(url: string): Promise<string | null> {
  * (one request per submission, identified UA, per their usage policy).
  * Results outside greater Houston are discarded — a wrong pin is worse than
  * no pin. Best-effort: failure just means no address yet. */
-async function geocodeQuery(
-  query: string,
-): Promise<{ address: string; lat: number; lng: number } | null> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=0&q=${encodeURIComponent(query)}`,
-      {
-        signal: AbortSignal.timeout(6000),
-        headers: { "user-agent": "bite-oclock/1.0 (Houston happy hour directory)" },
-      },
-    );
-    if (!res.ok) return null;
-    const data = (await res.json()) as { lat: string; lon: string; display_name: string }[];
-    const hit = data[0];
-    if (!hit) return null;
-    const lat = parseFloat(hit.lat);
-    const lng = parseFloat(hit.lon);
-    // Greater Houston bounding box — a wrong pin is worse than no pin.
-    if (!(lat > 29.2 && lat < 30.4 && lng > -96.2 && lng < -94.6)) return null;
-    const address = hit.display_name.split(",").slice(0, 3).join(",").trim().slice(0, 160);
-    return { address, lat, lng };
-  } catch {
-    return null;
-  }
-}
-
-async function geocode(
-  name: string,
-  addressHint: string | null,
-): Promise<{ address: string; lat: number; lng: number } | null> {
-  if (addressHint) {
-    const q = /houston|,\s*tx/i.test(addressHint) ? addressHint : `${addressHint}, Houston, TX`;
-    const byAddress = await geocodeQuery(q);
-    if (byAddress) return byAddress;
-  }
-  return geocodeQuery(`${name}, Houston, TX`);
-}
 
 /** Grab the page's og:image so the listing gets a food photo from the
  * restaurant's own site. Best-effort: any failure just means no image. */
@@ -228,17 +192,26 @@ export async function POST(req: Request) {
     if (match) spotSlug = match.slug;
   }
 
-  // Brand-new spots get looked up so they arrive with an address + map pin.
+  // Brand-new spots must arrive with an exact location — no pin, no listing.
   const geo = spotSlug
     ? null
-    : await geocode(payload.restaurant_name, payload.address ?? null);
+    : await geocodeSpot(payload.restaurant_name, payload.address ?? null);
+  if (!spotSlug && !geo) {
+    return NextResponse.json(
+      {
+        error: `Couldn't pin down ${payload.restaurant_name}'s location — add its street address so it gets an exact spot on the map.`,
+      },
+      { status: 422 },
+    );
+  }
 
   const slug = spotSlug ?? slugifyName(payload.restaurant_name);
   const { data, error } = await db
     .from("submissions")
     .insert({
       restaurant_name: payload.restaurant_name,
-      neighborhood: payload.neighborhood,
+      // Nobody types neighborhoods — the location knows where it is.
+      neighborhood: payload.neighborhood || geo?.neighborhood || null,
       days: payload.days,
       start_time: payload.start,
       end_time: payload.end,

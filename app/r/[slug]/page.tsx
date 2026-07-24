@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/format";
 import VerifyButtons from "@/components/VerifyButtons";
 import HoursEditor from "@/components/HoursEditor";
 import DealRow from "@/components/DealRow";
+import NavButton from "@/components/NavButton";
 import AskBar from "@/components/AskBar";
 import LiveNow from "./live";
 
@@ -82,19 +83,8 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
               🔗 Happy hour page ↗
             </a>
           )}
-          {(spot.lat !== null || spot.address) && (
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-                spot.lat !== null && spot.lng !== null
-                  ? `${spot.lat},${spot.lng}`
-                  : `${spot.name}, ${spot.address || "Houston, TX"}`,
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full bg-primary px-3.5 py-1 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
-            >
-              🧭 Take me there
-            </a>
+          {(spot.address || spot.lat !== null) && (
+            <NavButton name={spot.name} address={spot.address} />
           )}
           {spot.addedAt && (
             <span
