@@ -386,7 +386,13 @@ export default function BubbleView({
                     transitionDuration: "250ms",
                   }}
                 >
-                  <span style={{ fontSize: Math.max(13, n.r * 0.32) }}>{n.emoji}</span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/icons/${n.spot.deals[0]?.category ?? "barfood"}.svg`}
+                    alt=""
+                    draggable={false}
+                    style={{ width: Math.max(20, n.r * 0.72), height: Math.max(20, n.r * 0.72) }}
+                  />
                   <span
                     className="px-1 font-medium text-ink"
                     style={{ fontSize: Math.max(9, Math.min(13, n.r * 0.18)) }}

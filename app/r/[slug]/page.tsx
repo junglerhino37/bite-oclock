@@ -8,8 +8,10 @@ import { DAYS, DAY_LABELS, verificationKey } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 import VerifyButtons from "@/components/VerifyButtons";
 import HoursEditor from "@/components/HoursEditor";
+import CategoryIcon from "@/components/CategoryIcon";
 import DealRow from "@/components/DealRow";
 import NavButton from "@/components/NavButton";
+import RemoveListing from "@/components/RemoveListing";
 import AskBar from "@/components/AskBar";
 import LiveNow from "./live";
 
@@ -53,8 +55,8 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
             className="absolute inset-0 h-full w-full object-cover opacity-30"
           />
         )}
-        <span aria-hidden className="absolute -right-4 -top-6 text-[120px] opacity-40">
-          {dominant.emoji}
+        <span aria-hidden className="absolute -right-2 -top-2 opacity-50">
+          <CategoryIcon category={spot.deals[0]?.category ?? "barfood"} size={150} />
         </span>
         <p className="relative text-sm font-medium text-muted">
           <Link href="/" className="hover:text-ink">
@@ -311,6 +313,11 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
           <p>Community-submitted — always confirm with the restaurant.</p>
         )}
         {spot.notes && <p className="mt-1">{spot.notes}</p>}
+        {!getSpots().some((s) => s.slug === spot.slug) && (
+          <p className="mt-2">
+            <RemoveListing slug={spot.slug} name={spot.name} />
+          </p>
+        )}
       </footer>
     </article>
   );

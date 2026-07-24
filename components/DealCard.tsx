@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Spot } from "@/lib/types";
 import { DAY_LABELS } from "@/lib/types";
 import { CATEGORIES } from "@/lib/categories";
+import CategoryIcon from "./CategoryIcon";
 import { displayTimeRange, isDealStale, isLiveNow, latestVerifiedAt } from "@/lib/spots";
 import { timeAgo } from "@/lib/format";
 
@@ -23,6 +25,9 @@ export default function DealCard({
   const live = isLiveNow(spot);
   const verified = latestVerifiedAt(spot);
   const freshDeals = spot.deals.filter((d) => !isDealStale(spot, d.item));
+  // Deal-heavy spots collapse to a peek — tap +N to unfold without leaving.
+  const [expanded, setExpanded] = useState(false);
+  const visibleDeals = expanded ? freshDeals : freshDeals.slice(0, 3);
   // Real dish photos beat the og:image beat the category gradient.
   const headerImage = spot.deals.find((d) => d.photoUrl)?.photoUrl ?? spot.imageUrl ?? null;
   // Flash a badge for a day after a community update so a refreshed listing
@@ -53,10 +58,10 @@ export default function DealCard({
         ) : (
           <span
             aria-hidden
-            className="text-6xl transition-transform duration-300 group-hover:scale-110"
+            className="transition-transform duration-300 group-hover:scale-110"
             style={{ transitionTimingFunction: "var(--ease-spring)" }}
           >
-            {meta.emoji}
+            <CategoryIcon category={dominant} size={84} />
           </span>
         )}
         {live && (
@@ -92,7 +97,7 @@ export default function DealCard({
           </p>
         )}
         <ul className="flex flex-wrap gap-1.5">
-          {freshDeals.slice(0, 4).map((deal, i) => (
+          {visibleDeals.map((deal, i) => (
             <li
               key={i}
               className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
@@ -118,9 +123,18 @@ export default function DealCard({
               )}
             </li>
           ))}
-          {freshDeals.length > 4 && (
-            <li className="rounded-full bg-sunken px-2.5 py-1 text-xs text-muted">
-              +{freshDeals.length - 4} more
+          {freshDeals.length > 3 && (
+            <li>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setExpanded((x) => !x);
+                }}
+                className="rounded-full bg-sunken px-2.5 py-1 text-xs text-muted transition-colors hover:text-ink"
+              >
+                {expanded ? "show less" : `+${freshDeals.length - 3} more`}
+              </button>
             </li>
           )}
         </ul>

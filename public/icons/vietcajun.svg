@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <filter id="w" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.2"/></filter>
+    <filter id="p" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="0.7"/></filter>
+  </defs>
+  <ellipse cx="32" cy="36" rx="24" ry="15" fill="#f0cdb0" opacity=".5" filter="url(#w)"/>
+  <ellipse cx="44" cy="22" rx="12" ry="8" fill="#dce8d4" opacity=".5" filter="url(#w)"/>
+  <ellipse cx="34" cy="30" rx="10" ry="6.5" transform="rotate(-18 34 30)" fill="#c0392b" opacity=".85" filter="url(#p)"/>
+  <ellipse cx="30" cy="33" rx="8" ry="5" transform="rotate(-18 30 33)" fill="#d95d39" opacity=".8" filter="url(#p)"/>
+  <path d="M26 38 Q22 42 20 47 M30 39.5 Q28 43 27.5 47 M34 39.5 Q34 43 35 46" stroke="#a83224" stroke-width="2" fill="none" opacity=".7" stroke-linecap="round" filter="url(#p)"/>
+  <ellipse cx="45" cy="24" rx="4.6" ry="3" transform="rotate(28 45 24)" fill="#b8342a" opacity=".85" filter="url(#p)"/>
+  <ellipse cx="49" cy="20.5" rx="2.6" ry="1.8" transform="rotate(28 49 20.5)" fill="#d95d39" opacity=".8" filter="url(#p)"/>
+  <path d="M40 27 Q42 25.5 43.5 25.5" stroke="#a83224" stroke-width="2.2" fill="none" opacity=".7" stroke-linecap="round" filter="url(#p)"/>
+  <circle cx="40.5" cy="27.5" r="1.1" fill="#3d2b24" opacity=".85" filter="url(#p)"/>
+  <path d="M43 31 Q48 33 51 37" stroke="#c0392b" stroke-width="1.6" fill="none" opacity=".6" stroke-linecap="round" filter="url(#p)"/>
+</svg>

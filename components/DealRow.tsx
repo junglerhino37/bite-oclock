@@ -6,6 +6,7 @@ import type { Day, Deal, VoteSummary } from "@/lib/types";
 import { DAYS, DAY_LABELS } from "@/lib/types";
 import { CATEGORIES, CATEGORY_KEYS, type Category } from "@/lib/categories";
 import { compressImage } from "@/lib/image";
+import CategoryIcon from "./CategoryIcon";
 import VerifyButtons from "./VerifyButtons";
 
 const inputCls =
@@ -198,10 +199,10 @@ export default function DealRow({
             />
           ) : (
             <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
               style={{ background: `${meta.color}26` }}
             >
-              {meta.emoji}
+              <CategoryIcon category={deal.category} size={30} />
             </span>
           )}
           <div>

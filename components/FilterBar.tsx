@@ -56,7 +56,14 @@ export default function FilterBar({
                       }
                 }
               >
-                {meta.emoji} {meta.label}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/icons/${c}.svg`}
+                  alt=""
+                  className="mr-1 inline h-5 w-5 align-[-4px]"
+                  draggable={false}
+                />
+                {meta.label}
               </button>
             );
           })}

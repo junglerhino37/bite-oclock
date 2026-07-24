@@ -38,6 +38,7 @@ NEVER GUESS — only report what you can actually read:
 - Categorize each deal by the dish itself, item by item — menus mix categories. "pizza" means actual pizza, not "this seems like a pizza place".
 BE SPECIFIC — every deal must say exactly what you get and what the deal is:
 - "item" is REQUIRED and names the specific food: "BBQ sandwiches", "Smoked wings", "1/2 lb Angus burger". Never empty, never generic filler like "Special" or "Deal".
+- Keep "item" SHORT — the big/headline text only (aim under ~40 characters). Smaller print, parenthetical options, and included extras belong in "description": item "2 Big double slice pizza", description "One topper; includes medium drink" — NOT one giant title.
 - "price" is what you pay OR the deal mechanic, verbatim in spirit: "$10", "$6.99", "Buy 2 get 1 free", "Free with any order", "50% off". A bare range like "$5-7" is only acceptable when the menu itself prices a named item as a range.
 - If the menu is a daily-specials board ("MONDAY: ...", "THURSDAY-FRIDAY: ..."), set each deal's "days" to that deal's days. "days" marks EXCEPTIONS only: a deal that runs every day the menu covers (e.g. an "Everyday Special") gets "days": [], never all seven days.
 - "happy_hour_days" is the union of all days deals run (all seven for an every-day board).

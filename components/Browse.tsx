@@ -30,9 +30,9 @@ function ViewSkeleton({ label }: { label: string }) {
 
 type View = "list" | "map" | "bubbles";
 const VIEWS: { id: View; label: string }[] = [
-  { id: "list", label: "☰ List" },
   { id: "map", label: "🗺 Map" },
   { id: "bubbles", label: "🫧 Bubbles" },
+  { id: "list", label: "☰ List" },
 ];
 
 export default function Browse({
@@ -45,7 +45,7 @@ export default function Browse({
   /** Houston's current weekday — the default day filter ("today, not all days"). */
   today: Day;
 }) {
-  const [view, setView] = useState<View>("list");
+  const [view, setView] = useState<View>("map");
   const [filter, setFilter] = useState<DealFilter>({ ...EMPTY_FILTER, day: today });
   const [origin, setOrigin] = useState<LatLng | null>(null);
   const [geoNote, setGeoNote] = useState<string | null>(null);

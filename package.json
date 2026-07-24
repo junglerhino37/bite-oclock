@@ -1,10 +1,10 @@
 {
   "name": "bite-oclock",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "private": true,
   "description": "Houston's crowdsourced map of food happy hours",
   "author": "Christopher Rouxel",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

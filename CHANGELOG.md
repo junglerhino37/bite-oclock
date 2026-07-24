@@ -3,6 +3,22 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.15.0 — 2026-07-24
+
+- **License: GPL-3.0-or-later** (was MIT) — copyleft; forks must stay open.
+- **Map is the default view** (map → bubbles → list).
+- **Impressionist category icons** — hand-painted SVG dabs (Monet-leaning
+  palettes) replace emoji on cards, heroes, deal rows, bubbles, and
+  filter chips. First pass; drop replacement art into /public/icons.
+- **Deal-heavy cards collapse** — 3 deals + "+N more" expands in place.
+- **Community listings are removable** — "Added by mistake?" on
+  community spots soft-deletes (status → rejected, restorable); curated
+  seed listings can't be removed. Rate-limited.
+- **Daily backups** — Vercel cron snapshots submissions/votes/stats to a
+  private storage bucket every morning.
+- Extraction keeps titles short: headline text only, small print and
+  options go to the description.
+
 ## 1.14.0 — 2026-07-24
 
 - **Day-accurate business hours.** Google's per-day periods flow through

@@ -108,4 +108,7 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md). Be kind, keep it Houston.
 
 ## License
 
-[MIT](LICENSE) © 2026 Christopher Rouxel
+[GPL-3.0-or-later](LICENSE) © 2026 Christopher Rouxel
+
+Copyleft on purpose: fork it, learn from it, contribute back — but derived
+works must stay open source under the same terms.
