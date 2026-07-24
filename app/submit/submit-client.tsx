@@ -117,6 +117,7 @@ function draftFromExtractions(extractions: Extraction[], targetName?: string): D
   const withDays = extractions.find((x) => x.happy_hour_days.length > 0);
   const withTimes = extractions.find((x) => x.start || x.end);
   const seen = new Set<string>();
+  const spotDays = new Set(withDays?.happy_hour_days ?? []);
   const deals = extractions
     .flatMap((x) => x.deals)
     .filter((d) => {
@@ -125,6 +126,15 @@ function draftFromExtractions(extractions: Extraction[], targetName?: string): D
       seen.add(key);
       return true;
     });
+  /** Per-deal days mean *exceptions* — a deal stamped with every day (or the
+   * same days the whole spot runs) just inherits, so clear the stamp. */
+  const normalizeDays = (raw: string[] | undefined): Day[] => {
+    const days = (raw ?? []) as Day[];
+    if (days.length >= 7) return [];
+    if (spotDays.size > 0 && days.length === spotDays.size && days.every((d) => spotDays.has(d)))
+      return [];
+    return days;
+  };
   return {
     restaurant: targetName ?? first?.restaurant_candidates[0] ?? "",
     days: (withDays?.happy_hour_days ?? []) as Day[],
@@ -139,7 +149,7 @@ function draftFromExtractions(extractions: Extraction[], targetName?: string): D
       price: d.price ?? "",
       category: d.category as Category,
       description: d.description ?? "",
-      days: ((d as { days?: string[] }).days ?? []) as Day[],
+      days: normalizeDays((d as { days?: string[] }).days),
     })),
     note: "",
   };

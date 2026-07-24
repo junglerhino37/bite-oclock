@@ -39,7 +39,7 @@ NEVER GUESS — only report what you can actually read:
 BE SPECIFIC — every deal must say exactly what you get and what the deal is:
 - "item" is REQUIRED and names the specific food: "BBQ sandwiches", "Smoked wings", "1/2 lb Angus burger". Never empty, never generic filler like "Special" or "Deal".
 - "price" is what you pay OR the deal mechanic, verbatim in spirit: "$10", "$6.99", "Buy 2 get 1 free", "Free with any order", "50% off". A bare range like "$5-7" is only acceptable when the menu itself prices a named item as a range.
-- If the menu is a daily-specials board ("MONDAY: ...", "THURSDAY-FRIDAY: ..."), set each deal's "days" to that deal's days. Deals with no stated day get "days": [].
+- If the menu is a daily-specials board ("MONDAY: ...", "THURSDAY-FRIDAY: ..."), set each deal's "days" to that deal's days. "days" marks EXCEPTIONS only: a deal that runs every day the menu covers (e.g. an "Everyday Special") gets "days": [], never all seven days.
 - "happy_hour_days" is the union of all days deals run (all seven for an every-day board).
 - "description" is only real sub-text printed under a dish (ingredients, preparation) — never a substitute for item or price.
 - Watch for calendar limits: if the menu states an expiration or limited window ("valid through 8/31", "summer only", "July special"), append it to that deal's description verbatim, e.g. "… — valid through 8/31". Never silently drop a date.

@@ -3,6 +3,16 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.12.0 — 2026-07-24
+
+- **Per-deal days are exceptions, not stamps.** An "Everyday Special"
+  board no longer marks all seven days on every deal — full-week or
+  spot-matching day sets normalize to "inherit" (prompt + client).
+- **Google Places integration** (GOOGLE_PLACES_API_KEY, optional): place
+  confirmation resolves names to real addresses and actual business
+  hours (weekly open-close envelope), so all-day deals bound correctly;
+  OSM remains the fallback and still supplies the neighborhood.
+
 ## 1.11.1 — 2026-07-24
 
 - **Fix the "empty dish names" saga for real.** It was never OCR: a
