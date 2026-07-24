@@ -36,6 +36,9 @@ interface Draft {
   end: string;
   /** All-day deals run the business's full open–close hours. */
   allDay: boolean;
+  /** Whether the menu itself stated times — if not, confirming the place
+   * adopts the business's posted hours on the spot. */
+  timesFromMenu: boolean;
   deals: EditableDeal[];
   /** Public note shown on the listing. */
   note: string;
@@ -130,6 +133,7 @@ function draftFromExtractions(extractions: Extraction[], targetName?: string): D
     start: withTimes?.start || "15:00",
     end: withTimes?.start && !withTimes.end ? "" : withTimes?.end || "18:00",
     allDay: false,
+    timesFromMenu: !!withTimes,
     deals: deals.map((d) => ({
       item: d.item,
       price: d.price ?? "",
@@ -173,6 +177,17 @@ export default function SubmitClient({
   const [useMatch, setUseMatch] = useState(true);
   /** Business hours from OSM, when tagged — bounds "all day" deals. */
   const [knownHours, setKnownHours] = useState<{ start: string; end: string } | null>(null);
+  const [hoursFromPlace, setHoursFromPlace] = useState(false);
+
+  /** Confirming the place pays off instantly: if the menu never stated
+   * times, the When card snaps to the business's posted hours right there. */
+  function confirmPlace() {
+    setPlaceConfirmed(true);
+    if (knownHours && draft && !draft.timesFromMenu) {
+      setDraft({ ...draft, allDay: true, start: knownHours.start, end: knownHours.end });
+      setHoursFromPlace(true);
+    }
+  }
 
   async function addPhotos(list: FileList) {
     setError(null);
@@ -519,7 +534,7 @@ export default function SubmitClient({
                   </p>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setPlaceConfirmed(true)}
+                      onClick={confirmPlace}
                       className="rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-white hover:bg-primary-hover"
                     >
                       ✓ That&rsquo;s it
@@ -666,9 +681,11 @@ export default function SubmitClient({
             </div>
             {draft.allDay && (
               <p className="mt-2 text-xs text-muted">
-                {knownHours
-                  ? "Prefilled from OpenStreetMap's hours for this place — double-check them."
-                  : "Enter the business's open and close times — the deal runs the whole day."}
+                {hoursFromPlace
+                  ? `⚡ Set from ${draft.restaurant.trim() || "the restaurant"}'s posted hours — double-check them.`
+                  : knownHours
+                    ? "Prefilled from OpenStreetMap's hours for this place — double-check them."
+                    : "Enter the business's open and close times — the deal runs the whole day."}
               </p>
             )}
           </div>

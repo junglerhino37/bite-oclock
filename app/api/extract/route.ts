@@ -150,6 +150,20 @@ export async function POST(req: Request) {
     // SECURITY: model output is untrusted — schema-validate before returning,
     // and the client only ever treats it as a *pending* submission for review.
     const extraction = ExtractionSchema.parse(extractJson(text));
+    // Diagnostic breadcrumbs (Vercel function logs): what did the reader see?
+    console.log(
+      "extract ok",
+      JSON.stringify({
+        n: extraction.deals.length,
+        items: extraction.deals.map((d) => d.item.slice(0, 40)),
+        conf: extraction.confidence,
+        kb: Math.round(imageBuf.length / 1024),
+        hint: hint || null,
+      }),
+    );
+    if (extraction.deals.length === 0 || extraction.deals.every((d) => !d.item.trim())) {
+      console.log("extract sparse — raw model text:", text.slice(0, 800));
+    }
     return NextResponse.json({ demo: false, extraction });
   } catch (err) {
     console.error("extract failed:", err);

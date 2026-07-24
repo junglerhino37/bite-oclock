@@ -3,6 +3,16 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.11.0 — 2026-07-24
+
+- **Confirming the place pays off instantly**: if the menu never stated
+  times, tapping "✓ That's it" snaps the When card to the business's
+  posted hours (all-day, opens/closes) right then and there.
+- Extraction now logs diagnostic breadcrumbs (item names, confidence,
+  image size, hint) to the function logs, plus the raw model text when a
+  read comes back sparse — so empty-dish reports can be diagnosed from
+  real requests.
+
 ## 1.10.2 — 2026-07-24
 
 - Fix "Network error" on Read the menu: phone camera shots exceeded the
