@@ -3,6 +3,12 @@
 The site shows the current version in the footer (from `package.json`).
 See AGENTS.md → "Versioning" for the bump rules.
 
+## 1.8.1 — 2026-07-23
+
+- Submit screen offers "📷 Snap the menu now" (launches the camera via
+  capture=environment) alongside "🖼 From your photos"; file inputs accept
+  image/* so mobile pickers show the camera option everywhere.
+
 ## 1.8.0 — 2026-07-23
 
 - **Exact locations only.** New spots must geocode (address or name) or the

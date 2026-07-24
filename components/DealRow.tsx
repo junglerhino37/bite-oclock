@@ -128,7 +128,7 @@ export default function DealRow({
             {photo ? `📷 ${photo.name.slice(0, 18)}` : deal.photoUrl ? "📷 Replace photo" : "📷 Add a dish photo"}
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/*"
               className="hidden"
               onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
             />
